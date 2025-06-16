@@ -201,7 +201,6 @@
         </div>
     </div>
 
-    <!-- 音乐文件: 请确保文件名与您上传到GitHub的文件名完全一致 -->
     <audio id="bgm-menu" loop src="gymnopedie"></audio>
     <audio id="bgm-game" loop src="arabesque"></audio>
 
@@ -214,25 +213,28 @@
         let isAudioUnlocked = false;
         function unlockAudio() {
             if (isAudioUnlocked) return;
-            // 尝试播放并立即暂停，这是解锁音频的常用技巧
-            bgmMenu.play().catch(() => {});
-            bgmMenu.pause();
-            bgmGame.play().catch(() => {});
-            bgmGame.pause();
+            const promiseMenu = bgmMenu.play();
+            if (promiseMenu !== undefined) {
+                promiseMenu.then(() => {
+                    bgmMenu.pause();
+                }).catch(() => {});
+            }
+            const promiseGame = bgmGame.play();
+            if (promiseGame !== undefined) {
+                promiseGame.then(() => {
+                    bgmGame.pause();
+                }).catch(() => {});
+            }
             isAudioUnlocked = true;
         }
 
-        function playMusic(music) {
+        function playMusic(musicToPlay) {
             if (!isAudioUnlocked) return;
-            if (music === bgmMenu) {
-                bgmGame.pause();
-                bgmGame.currentTime = 0;
-            } else {
-                bgmMenu.pause();
-                bgmMenu.currentTime = 0;
-            }
-            music.currentTime = 0;
-            music.play().catch(e => console.error("音乐播放失败:", e));
+            const musicToStop = musicToPlay === bgmMenu ? bgmGame : bgmMenu;
+            musicToStop.pause();
+            musicToStop.currentTime = 0;
+            musicToPlay.currentTime = 0;
+            musicToPlay.play().catch(e => console.error("音乐播放失败:", e));
         }
 
         function resizeCanvas() {
@@ -453,7 +455,6 @@
         function endGame() {
             if (gameState === 'gameOver') return;
             gameState = 'gameOver';
-            playMusic(bgmMenu);
 
             const finalScoreEl = document.getElementById('finalScore');
             finalScoreEl.textContent = '最终分数: ' + score;
@@ -468,6 +469,8 @@
             document.getElementById('gameOver').style.display = 'block';
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('tapHint').style.display = 'none';
+            
+            playMusic(bgmMenu);
         }
 
         function update() {
@@ -582,7 +585,6 @@
             if(gameState === 'playing') {
                 update();
             }
-            // 无论什么状态，都持续渲染
             render();
             animationId = requestAnimationFrame(gameLoop);
         }
@@ -598,19 +600,10 @@
         function showStartScreen() {
             gameState = 'start';
             resetOtterPosition();
-            otter.velocity = 0;
-            otter.rotation = 0;
-            seaweeds = [];
-            collectibles = [];
-            bubbles = [];
-            scenery = [];
-            heartChallengeTriggered = false;
-            
-            playMusic(bgmMenu);
-
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('startScreen').style.display = 'block';
             document.getElementById('tapHint').style.display = 'none';
+            playMusic(bgmMenu);
         }
 
         function startGame() {
@@ -639,6 +632,28 @@
         }
         
         // --- Event Listeners ---
+        function handleInteraction(event) {
+            unlockAudio();
+            // 阻止默认行为，如页面滚动或双击缩放
+            event.preventDefault();
+
+            // 如果点击的是按钮，让按钮自己的事件处理器来处理
+            if (event.target.tagName === 'BUTTON') {
+                return;
+            }
+
+            // 根据游戏状态执行相应操作
+            if (gameState === 'playing') {
+                jump();
+            } else if (gameState === 'start') {
+                // 如果在开始界面，任何非按钮点击都视为开始游戏
+                startGame();
+            } else if (gameState === 'gameOver') {
+                 // 在游戏结束界面，任何非按钮点击都视为返回主菜单
+                showStartScreen();
+            }
+        }
+        
         document.getElementById('startButton').addEventListener('click', () => {
             unlockAudio();
             startGame();
@@ -651,17 +666,16 @@
             unlockAudio();
             showStartScreen();
         });
-        document.getElementById('gameCanvas').addEventListener('click', () => {
-            unlockAudio();
-            if (gameState === 'playing') {
-                jump();
-            }
-        });
+
+        // 为电脑和手机设置统一的监听器
+        document.getElementById('gameContainer').addEventListener('click', handleInteraction);
+        document.getElementById('gameContainer').addEventListener('touchstart', handleInteraction, { passive: false });
+
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
                 unlockAudio();
-                if (gameState === 'playing') {
+                 if (gameState === 'playing') {
                     jump();
                 } else if (gameState === 'start') {
                     startGame();
