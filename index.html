@@ -21,7 +21,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(180deg, #001f3f 0%, #003d7a 50%, #004d8a 100%);
+            background: #000;
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             position: fixed;
@@ -35,32 +35,17 @@
             max-width: 800px;
             border: none;
             overflow: hidden;
+            background: linear-gradient(180deg, #87CEEB 0%, #4682B4 50%, #001f3f 100%);
             touch-action: none;
-            -webkit-touch-callout: none;
         }
-        /* 手机竖屏优化 - 限制高度，保持合理的宽高比 */
         @media (max-width: 768px) and (orientation: portrait) {
-            #gameContainer {
-                width: 100vw;
-                height: 70vh; /* 减少高度，避免画面过长 */
-                max-height: 500px;
-                border-radius: 0;
-            }
+            #gameContainer { width: 100vw; height: 100vh; }
         }
-        /* 手机横屏优化 */
         @media (max-width: 768px) and (orientation: landscape) {
-            #gameContainer {
-                width: 100vw;
-                height: 100vh;
-                border-radius: 0;
-            }
+            #gameContainer { width: 100vw; height: 100vh; }
         }
-        /* 平板和大屏手机 */
         @media (min-width: 769px) {
-            #gameContainer {
-                max-height: 600px;
-                border-radius: 15px;
-            }
+            #gameContainer { max-height: 600px; border-radius: 15px; box-shadow: 0 0 20px rgba(135, 206, 235, 0.5); }
         }
         #gameCanvas {
             display: block;
@@ -76,6 +61,7 @@
             width: 100%;
             height: 100%;
             z-index: 10;
+            pointer-events: none; /* UI层不接受点击，交给gameContainer统一处理 */
         }
         #score {
             position: absolute;
@@ -85,80 +71,58 @@
             font-size: 24px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            pointer-events: none;
         }
-        @media (max-width: 480px) {
-            #score {
-                font-size: 20px;
-                top: 15px;
-                left: 15px;
-            }
-        }
-        #gameOver, #startMenu {
+        .screen {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 20, 40, 0.85);
-            padding: 30px;
-            border-radius: 15px;
-            color: #fff;
-            text-align: center;
-            display: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 15px;
-            border: 2px solid rgba(173, 216, 230, 0.5);
-            box-shadow: 0 0 25px rgba(0, 150, 255, 0.5);
+            text-align: center;
+            color: white;
+            background: rgba(0, 25, 51, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 20;
+            pointer-events: auto; /* 屏幕层可以接收点击 */
         }
-        h1, h2 {
-            margin: 0;
-            padding: 0;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
-        }
-        h1 { font-size: 32px; }
-        h2 { font-size: 24px; color: #ffd700; }
-        #finalScore, #menuTitle {
-            font-size: 28px;
-            font-weight: bold;
+        #startScreen h1 {
+            font-size: 48px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
             margin-bottom: 10px;
         }
-        #menuInstructions {
-            font-size: 16px;
-            margin-top: 10px;
-            max-width: 250px;
-            line-height: 1.5;
+        #startScreen p, #gameOver p {
+            font-size: 18px;
+            margin-top: 0;
         }
         .button-container {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
+            margin-top: 20px;
         }
-        button {
+        .button {
+            background-color: #ff9800;
+            color: white;
             padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #001f3f;
-            background: linear-gradient(145deg, #a2d2ff, #bde0fe);
             border: none;
             border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-            filter: brightness(1.1);
-        }
-        #medal {
-            font-size: 48px;
-            margin-top: 5px;
-        }
-        #specialMessage {
-            font-size: 22px;
-            color: #ffb7c5;
+            font-size: 18px;
             font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px #e68a00;
+            transition: all 0.1s ease;
+            margin: 0 10px;
+        }
+        .button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #e68a00;
+        }
+        #gameOver { display: none; }
+        #finalMessage, #loveMessage { display: none; }
+        #medal {
+            font-size: 60px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -166,21 +130,27 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         <div id="ui">
-            <div id="score">分数: 0</div>
-            <div id="startMenu">
-                <h1 id="menuTitle">小太郎の大冒险</h1>
-                <p id="menuInstructions">点击或触摸屏幕开始游戏<br>控制小太郎穿梭，躲避海草！</p>
+            <div id="score">得分: 0</div>
+            <div id="loveMessage" class="screen" style="pointer-events: none;">
+                <h1>爱你宝宝 ❤️</h1>
             </div>
-            <div id="gameOver">
-                <h1>游戏结束</h1>
-                <div id="medal"></div>
-                <div id="finalScore"></div>
-                <p id="specialMessage"></p>
-                <div class="button-container">
-                    <button id="restartButton">再玩一次</button>
-                    <button id="menuButton">返回主菜单</button>
-                </div>
+        </div>
+        <div id="startScreen" class="screen">
+            <h1>小太郎の大冒险</h1>
+            <p>点击或触摸屏幕开始</p>
+        </div>
+        <div id="gameOver" class="screen">
+            <h1>游戏结束</h1>
+            <div id="medal"></div>
+            <p id="finalScore"></p>
+            <div class="button-container">
+                <button id="restartButton" class="button">再玩一次</button>
+                <button id="menuButton" class="button">返回主菜单</button>
             </div>
+        </div>
+        <div id="finalMessage" class="screen">
+            <h1>恭喜通关!</h1>
+            <p>请联系制作者领取神秘礼物🎁</p>
         </div>
     </div>
 
@@ -190,379 +160,422 @@
 
     <script>
         const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d', { alpha: true });
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
 
         const scoreEl = document.getElementById('score');
-        const gameOverEl = document.getElementById('gameOver');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOver');
         const finalScoreEl = document.getElementById('finalScore');
-        const startMenuEl = document.getElementById('startMenu');
+        const finalMessage = document.getElementById('finalMessage');
+        const loveMessage = document.getElementById('loveMessage');
         const restartButton = document.getElementById('restartButton');
         const menuButton = document.getElementById('menuButton');
         const medalEl = document.getElementById('medal');
-        const specialMessageEl = document.getElementById('specialMessage');
-        const gameContainer = document.getElementById('gameContainer');
-
+        
         const bgmMenu = document.getElementById('bgm-menu');
         const bgmGame = document.getElementById('bgm-game');
 
-        let canvasWidth, canvasHeight;
-        let otter, seaweeds, collectibles, backgroundStones;
-        let frame = 0;
-        let score = 0;
-        let gameState = 'menu'; // 'menu', 'playing', 'gameOver'
-        let gravity = 0.2;
-        let lift = -4.5;
-        let moveSpeed = 1.8;
+        let isGameOver = false, gameStarted = false, hasShield = false;
+        let score = 0, frame = 0, difficultyLevel = 0;
         let audioUnlocked = false;
 
-        const otterImg = {
-            default: 'assets/otter.png',
-            shield: 'assets/otter_shield.png'
-        };
+        let W, H; // Canvas dimensions in CSS pixels
 
-        const kotaro = {
-            x: 0, y: 0, width: 45, height: 45,
-            velocity: 0,
-            img: new Image(),
-            hasShield: false,
-            angle: 0,
-            draw() {
-                ctx.save();
-                ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-                ctx.rotate(this.angle);
-                ctx.drawImage(this.img, -this.width / 2, -this.height / 2, this.width, this.height);
-                ctx.restore();
-            },
-            update() {
-                this.velocity += gravity;
-                this.y += this.velocity;
-                this.angle = Math.min(Math.max(this.velocity * 0.08, -Math.PI / 6), Math.PI / 4);
+        let otter = {}, seaweeds = [], collectibles = [], backgroundRocks = [];
 
-                if (this.y + this.height > canvasHeight || this.y < 0) {
-                    if (!(this.y < 0 && this.hasShield)) {
-                        endGame();
-                    }
-                }
+        const settings = {
+            gravity: 0.18,
+            jumpStrength: -4.5,
+            otterSize: 30,
+            seaweed: {
+                width: 50,
+                minGap: 150, 
+                maxGap: 250
             },
-            jump() {
-                this.velocity = lift;
+            collectibles: {
+                size: 15,
+                chance: 0.6,
+                starChance: 0.15,
+                heartSize: 20
             },
-            setShield(state) {
-                this.hasShield = state;
-                this.img.src = state ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBmaWxsPSIjYzg4OTNjIiBkPSJNNzguMyA3Ny4xYy0xLjgtLjQtMy41LS4xLDUuMS0uOGwxLjIgMS4yYy0xLjIgMS4zLTIuNSAyLjUtMy44IDMuNy01LjEgNS4yLTEyLjEgOC41LTE5LjcgOC41cy0xNC42LTMuMy0xOS43LTguNWMtMS4zLTEuMy0yLjUtMi41LTMuOC0zLjdsMS4yLTEuMmMxLjYtLjcgMy4zLTEuMSA1LjEtLjggMS44LjMgMy4yIDEuNSA0LjEgMy4xIDEgMS42IDIuMSAzLjEgMy41IDQuNCAyLjkgMi43IDYuNyA0LjIgMTAuNiA0LjJzNy43LTEuNSAxMC42LTQuMmMyLjktMi45IDQuOC02LjUgNS4zLTguOC43LTMuMS41LTYuMi0uNC05LjMtLjgtMi45LTEuOC01LjQtMi40LTcuNGwtLjEtLjRjLS4xLS40LS41LS43LS45LS42LS40LjEtLjcuNS0uNi45bC4xLjRjLjYgMiAyIDEuNiA0LjggNC45IDAgMCAuMS4xLjEuMS42IDIuMS44IDQuNCAwIDYuOC0uNyAyLjItMi4zIDQuMS00LjIgNS41LTEuOSAxLjUtNC4zIDIuNC02LjggMi40cy00LjktLjktNi44LTIuNGMtMS45LTEuNS0zLjMtMy4zLTQuMi01LjVzLS42LTQuNyAwLTYuOGMxLjktMi41IDQuOC00LjkgNC44LTQuOWwuMS0uMWMuMy0uMy40LS43LjEtMS0uMy0uMy0uNy0uNC0xLS4xbC0uMS4xcy0zIDIgLTQuOCA0LjljLS44IDIuMS0xIDQuNC0uNCA2LjgtLjYgMi4yLS4yIDQuNSA1IDYuNyAxLjkgMi44IDQuOSA1IDggNi40IDMuMSAxLjUgNi42IDEuOSA5LjkgMS4zIDMuMy0uNiA2LjItMi4zIDguMi00LjkgMS4yLTEuNSAyLjItMy4yIDMuMS01IDEuMS0yLjIgMS41LTQuNSAxLjEtNi45LS40LTIuNC0xLjQtNC42LTMtNi40bC0uMS0uMWMtLjMtLjMtLjMtLjgtLjEtMSAuMy0uMy44LS4zIDEgLjFsLjEuMWMxLjYgMS44IDMuOSA0LjQgMy45IDQuNC0uNyAyLjQtMi4xIDQuNy00LjEgNi42LTEgMS0yLjEgMS45LTMuNCAyLjgtMi42IDEuOC01LjggMi44LTkuMSAyLjgtMy4zIDAtNi41LTEtOS4xLTIuOC0yLjYtMS44LTQuNi00LjItNS44LTYuOS0xLjItMi44LTEuNS01LjgtLjgtOC44LjctMyAxLjktNi4yIDQuNC04LjRsLjQtLjVjLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMGwtLjQuNWMtMi41IDIuMy01LjIgNi42LTQuNCA4LjguNyAyLjIgMS44IDQuMyAzLjUgNS45IDIuOCA1y45IDguNyA5LjggOS44IDYuOCA2LjUgMTQuNiA5LjggMjIuOSA5LjhzMTYtMy4zIDIwLjktOC4yYzEuMy0xLjMgMi42LTIuNiAzLjgtMy45bDcuMi03LjJjLjYtLjYgMS40LTEuMSAyLjMtMS4zIDEuOC0uNCAzLjgtLjUgNS45LS4xIDEuOS4zIDMuNyAxIDUuMyAyLjNsLjEtLjFjLjMtLjMuOC0uMyAxIDBsLjUuNWMuMy4zLjMgLjggMCAxLjFsLS41LjVjLTEuNiAxLjMtMy40IDEuOS01LjMgMi4zLTEuOS4zLTMuOS4yLTUuOS0uMS0uOS0uMS0xLjgtLjQtMi4zLTEuMWwtNy4yIDcuMiIvPjxwYXRoIGZpbGw9IiM4MjQ2NzciIGQ9Ik01MCAxNy43bDIuMyAyLjFjMi40IDEuOSAzLjkgMy43IDQuOCA1LjYgMS4yIDIuNyAxLjQgNS4xLjQgNi44LS45IDEuNi0yLjEgMy0zLjYgNC4zLTcgMy40LTEzLjkgNC4zLTIxLjkgMS4zLTEuMS0uMy0xLjEtMiAwLTIuMyA3LjMtMi43IDEzLjctMy40IDIwLjQtNi41IDEuMy0uNiAyLjUtMS4zIDMuNi0yLjNsLjEtLjFjLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMGwtLjEuMWMtMS4xIDEuMS0yLjMgEuMy0zLjYgMi4zLTQuOSA0LjctMTIuMiA2LjQtMTkuMyA0LjEtMS0uMy0yLjEtLjgtMy0xLjRzLTEuNy0xLjItMi40LTEuOWMtMS4zLTEuMy0yLjEtMy0yLjMtNC45LS4xLTEuNS4yLTMgLjktNC41IDEuOC0zLjcgNC44LTYuMiA4LjEtOC44IDIuMS0xLjQgNC4zLTIuNSA2LjYtMy42IDIuMS0xIDQuMy0xLjggNi42LTEuOC45IDAgMS44LjEgMi42LjRsLjktLjJjLjQtLjEuOC4yLjkgLjYtLjIgMS4xLTEgMi4xLTEuMyAyLjZsLS4xLjFjLS4zLS4xLS43LS4yLTEtLjNoLS4xYy0yLjIgMC00LjQuOC02LjUgMS44LTIuMyAxLTIuMiAzLjYtNC41IDQuNi0xLjMgMy4xLTIuMyA1LjQtNS4xIDcuNGwtMS4zIDEuNGMtLjMgLjMtLjMgLjggMCAxLjEuMy4zLjggLjMgMS4xIDBsMS4zLTEuNGM0LjEtNC4xIDQuOC03LjMgNy4xLTEwLjYgMS0xLjMgMS44LTIuNiAyLjUtNC4xLjgtMS41IDEuMi0zLjEuOC00LjgtLjQtMS41LTEuNC0yLjgtMi44LTMuN2wtMi4zLTIuMXptLTEzLjYgNS45Yy4zLjMuOC4zIDEuMSAwIC4zLS4zLjMtLjggMC0xLjEtLjMtLjMtLjgtLjMtMS4xIDAtLjQuMy0uMy44IDAgMS4xem0yOS4xIDEzLjVjLS4zLS4zLS44LS4zLTEuMSAwLS4zLjMtLjMuOCAwIDEuMS4zLjMuOC4zIDEuMSAwIC4zLS4zLjMtLjggMC0xLjF6bS00My41IDE5LjljLjMuMy44LjMgMS4xIDAgLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bS0xLjQgOS4yYy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xYy0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bTIuOC0xOC41Yy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xYy0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bS0uNyA5LjVjLjMuMy44LjMgMS4xIDBzLjMtLjggMC0xYy0uMy0uMy0uOC0uMy0xLjEgMC0uMy40LS4zLjggMCAxek0xOC40IDQ5Yy4zLjMuOC4zIDEuMSAwIC4zLS4zLjMtLjggMC0xLjEtLjMtLjMtLjgtLjMtMS4xIDAtLjMuMy0uMy44IDAgMS4xem0yLjEgNS4yYy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xYy0uMy0uMy0uOC0uMy0xLjEgMC0uNC4zLS4zLjggMCAxLjF6bS0xMS44IDEzLjljLjMuMy44LjMgMS4xIDAgLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bTkgMS44Yy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xLS44LS4zLTEuMSAwYy0uMy4zLS4zLjggMCAxLjF6Ii8+PC9zdmc+' : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBmaWxsPSIjYzg4OTNjIiBkPSJNNzguMyA3Ny4xYy0xLjgtLjQtMy41LS4xLDUuMS0uOGwxLjIgMS4yYy0xLjIgMS4zLTIuNSAyLjUtMy44IDMuNy01LjEgNS4yLTEyLjEgOC41LTE5LjcgOC41cy0xNC42LTMuMy0xOS43LTguNWMtMS4zLTEuMy0yLjUtMi41LTMuOC0zLjdsMS4yLTEuMmMxLjYtLjcgMy4zLTEuMSA1LjEtLjggMS44LjMgMy4yIDEuNSA0LjEgMy4xIDEgMS42IDIuMSAzLjEgMy41IDQuNCAyLjkgMi43IDYuNyA0LjIgMTAuNiA0LjJzNy43LTEuNSAxMC42LTQuMmMyLjktMi45IDQuOC02LjUgNS4zLTguOC43LTMuMS41LTYuMi0uNC05LjMtLjgtMi45LTEuOC01LjQtMi40LTcuNGwtLjEtLjRjLS4xLS40LS41LS43LS45LS42LS40LjEtLjcuNS0uNi45bC4xLjRjLjYgMiAyIDEuNiA0LjggNC45IDAgMCAuMS4xLjEuMS42IDIuMS44IDQuNCAwIDYuOC0uNyAyLjItMi4zIDQuMS00LjIgNS41LTEuOSAxLjUtNC4zIDIuNC02LjggMi40cy00LjktLjktNi44LTIuNGMtMS45LTEuNS0zLj۳LTMuMy00LjItNS41cy0uNi00LjcgMC02LjhjMS45LTIuNSA0LjgtNC45IDQuOC00LjlsLjEtLjFjLjMtLjMuNC0uNy4xLTEtLjMtLjMtLjctLjQtMS0uMWwtLjEuMXMtMyAyIC00LjggNC45Yy0uOCAyLjEtMSA0LjQtLjQgNi44LS42IDIuMi0uMiA0LjUgNSA2LjcgMS45IDIuOCA0LjkgNSA4IDYuNCAzLjEgMS41IDYuNiAxLjkgOS45IDEuMyAzLjMtLjYgNi4yLTIuMyA4LjItNC45IDEuMi0xLjUgMi4yLTMuMiAzLjEtNSAxLjEtMi4yIDEuNS00LjUgMS4xLTYuOS0uNC0yLjQtMS40LTQuNi0zLTYuNGwtLjEtLjFjLS4zLS4zLS4zLS44LS4xLTEgLjMtLjMuOC0uMyAxIC4xbC4xLjFjMS42IDEuOCAzLjOSA0LjQgMy45IDQuNC0uNyAyLjQtMi4xIDQuNy00LjEgNi42LTEgMS0yLjEgMS45LTMuNCAyLjgtMi42IDEuOC01LjggMi44LTkuMSAyLjgtMy4zIDAtNi41LTEtOS4xLTIuOC0yLjYtMS44LTQuNi00LjItNS44LTYuOS0xLjItMi44LTEuNS01LjgtLjgtOC44LjctMyAxLjktNi4yIDQuNC04LjRsLjQtLjVjLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMGwtLjQuNWMtMi41IDIuMy01LjIgNi42LTQuNCA4LjguNyAyLjIgMS44IDQuMyAzLjUgNS45IDIuOCA1y45IDguNyA5LjggOS44IDYuOCA2LjUgMTQuNiA5LjggMjIuOSA5LjhzMTYtMy4zIDIwLjktOC4yYzEuMy0xLjMgMi42LTIuNiAzLjgtMy45bDcuMi03LjJjLjYtLjYgMS40LTEuMSAyLjMtMS4zIDEuOC0uNCAzLjgtLjUgNS45LS4xIDEuOS4zIDMuNyAxIDUuMyAyLjNsLjEtLjFjLjMtLjMuOC0uMyAxIDBsLjUuNWMuMy4zLjMgLjggMCAxLjFsLS41LjVjLTEuNiAxLjMtMy40IDEuOS01LjMgMi4zLTEuOS4zLTMuOS4yLTUuOS0uMS0uOS0uMS0xLjgtLjQtMi4zLTEuMWwtNy4yIDcuMiIvPjxwYXRoIGZpbGw9IiM4MjQ2NzciIGQ9Ik01MCAxNy43bDIuMyAyLjFjMi40IDEuOSAzLjkgMy43IDQuOCA1LjYgMS4yIDIuNyAxLjQgNS4xLjQgNi44LS45IDEuNi0yLjEgMy0zLjYgNC4zLTcgMy40LTEzLjkgNC4zLTIxLjkgMS4zLTEuMS0uMy0xLjEtMiAwLTIuMyA3LjMtMi43IDEzLjctMy40IDIwLjQtNi41IDEuMy0uNiAyLjUtMS4zIDMuNi0yLjNsLjEtLjFjLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMGwtLjEuMWMtMS4xIDEuMS0yLjMgMS4zLTMuNiAyLjMtNC45IDQuNy0xMi4yIDYuNC0xOS4zIDQuMS0xMC4zLTIuMS0uOC0zLTEuNC0xLjctMS4yLTIuNC0xLjljLTEuMy0xLjMtMi4xLTMtMi4zLTQuOS0uMS0xLjUgLjItMyAuOS00LjUgMS44LTMuNyA0LjgtNi4yIDguMS04LjggMi4xLTEuNCA0LjMtMi41IDYuNi0zLjYgMi4xLTEgNC4zLTEuOCA2LjYtMS44LjkgMCAxLjguMSAyLjYuNC4zIDAgLjgtLjIgLjktLjYtLjIgMS4xLTEgMi4xLTEuMyAyLjZsLS4xLjFjLS4zLS4xLS43LS4yLTEtLjNoLS4xYy0yLjIgMC00LjQuOC02LjUgMS44LTIuMyAxLTIuMiAzLjYtNC41IDQuNi0xLjMgMy4xLTIuMyA1LjQtNS4xIDcuNGwtMS4zIDEuNGMtLjMgLjMtLjMgLjggMCAxLjEuMy4zLjggLjMgMS4xIDBsMS4zLTEuNGM0LjEtNC4xIDQuOC03LjMgNy4xLTEwLjYgMS0xLjMgMS44LTIuNiAyLjUtNC4xLjgtMS41IDEuMi0zLjEuOC00LjgtLjQtMS41LTEuNC0yLjgtMi44LTMuN2wtMi4zLTIuMXptLTEzLjYgNS45Yy4zLjMuOC4zIDEuMSAwIC4zLS4zLjMtLjggMC0xLjEtLjMtLjMtLjgtLjMtMS4xIDAtLjQuMy0uMy44IDAgMS4xem0yOS4xIDEzLjVjLS4zLS4zLS44LS4zLTEuMSAwLS4zLjMtLjMuOCAwIDEuMS4zLjMuOC4zIDEuMSAwIC4zLS4zLjMtLjggMC0xLjF6bS00My41IDE5LjljLjMuMy44LjMgMS4xIDAgLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bS0xLjQgOS4yYy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xYy0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bTIuOC0xOC41Yy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xYy0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bS0uNyA5LjVjLjMuMy44LjMgMS4xIDBzLjMtLjggMC0xYy0uMy0uMy0uOC0uMy0xLjEgMC0uMy40LS4zLjggMCAxek0xOC40IDQ5Yy4zLjMuOC4zIDEuMSAwIC4zLS4zLjMtLjggMC0xLjEtLjMtLjMtLjgtLjMtMS4xIDAtLjMuMy0uMy44IDAgMS4xem0yLjEgNS4yYy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xYy0uMy0uMy0uOC0uMy0xLjEgMC0uNC4zLS4zLjggMCAxLjF6bS0xMS44IDEzLjljLjMuMy44LjMgMS4xIDAgLjMtLjMuMy0uOCAwLTEuMS0uMy0uMy0uOC0uMy0xLjEgMC0uMy4zLS4zLjggMCAxLjF6bTkgMS44Yy4zLjMuOC4zIDEuMSAwcy4zLS44IDAtMS4xLS44LS4zLTEuMSAwYy0uMy4zLS4zLjggMCAxLjF6Ii8+PC9zdmc+'
+            difficulty: [
+                { score: 0,  speed: 1.8, interval: 150 }, // 0-50
+                { score: 50, speed: 2.1, interval: 130 }, // 51-80
+                { score: 80, speed: 2.4, interval: 110 }  // 81+
+            ],
+            rock: {
+                count: 10,
+                minSize: 20,
+                maxSize: 60,
+                minSpeed: 0.1,
+                maxSpeed: 0.3
             }
         };
+        let currentDifficulty = settings.difficulty[0];
 
-        function setCanvasDimensions() {
+        function setupCanvas() {
+            const rect = gameContainer.getBoundingClientRect();
+            W = rect.width;
+            H = rect.height;
+
             const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            canvas.style.width = `${W}px`;
+            canvas.style.height = `${H}px`;
+            
             ctx.scale(dpr, dpr);
-            canvasWidth = canvas.width / dpr;
-            canvasHeight = canvas.height / dpr;
-        }
-        
-        function playMusic(type) {
-            if (!audioUnlocked) return;
-            if (type === 'menu') {
-                bgmGame.pause();
-                bgmGame.currentTime = 0;
-                bgmMenu.play().catch(e => console.error("菜单音乐播放失败:", e));
-            } else if (type === 'game') {
-                bgmMenu.pause();
-                bgmMenu.currentTime = 0;
-                bgmGame.play().catch(e => console.error("游戏音乐播放失败:", e));
-            }
         }
 
-        function stopAllMusic() {
-            bgmMenu.pause();
-            bgmGame.pause();
-        }
-
-        function unlockAndPlayAudio() {
-            if (audioUnlocked) return;
-            const promise1 = bgmMenu.play();
-            if (promise1 !== undefined) {
-                promise1.then(_ => {
-                    bgmMenu.pause();
-                    audioUnlocked = true;
-                    if (gameState === 'menu') playMusic('menu');
-                    else if (gameState === 'playing') playMusic('game');
-                }).catch(error => {
-                    console.error("音频解锁失败:", error);
-                    // Even if it fails, we set it to true to not try again.
-                    audioUnlocked = true; 
-                });
-            } else {
-                 audioUnlocked = true;
-            }
-        }
-        
-        function resetGame() {
-            kotaro.y = canvasHeight / 2;
-            kotaro.velocity = 0;
-            kotaro.setShield(false);
-            seaweeds = [];
-            collectibles = [];
-            backgroundStones = [];
+        function init() {
+            isGameOver = false;
+            gameStarted = true;
             score = 0;
             frame = 0;
-            scoreEl.innerText = '分数: 0';
-            specialMessageEl.innerText = '';
+            hasShield = false;
+            difficultyLevel = 0;
+            currentDifficulty = settings.difficulty[0];
+
+            otter = {
+                x: 80,
+                y: H / 2,
+                vy: 0,
+                width: settings.otterSize,
+                height: settings.otterSize
+            };
+            seaweeds = [];
+            collectibles = [];
+
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            finalMessage.style.display = 'none';
+            scoreEl.style.display = 'block';
+            updateScore();
             
-            for (let i = 0; i < 15; i++) {
-                backgroundStones.push({
-                    x: Math.random() * canvasWidth,
-                    y: canvasHeight - (Math.random() * canvasHeight * 0.2),
-                    size: Math.random() * 20 + 10
-                });
-            }
+            bgmMenu.pause();
+            bgmGame.currentTime = 0;
+            bgmGame.play().catch(e => console.error("Game BGM failed to play:", e));
         }
 
-        function showMenu() {
-            gameState = 'menu';
-            gameOverEl.style.display = 'none';
+        function resetToMenu() {
+            isGameOver = false;
+            gameStarted = false;
             scoreEl.style.display = 'none';
-            startMenuEl.style.display = 'flex';
-            resetGame();
-            playMusic('menu');
-            draw();
-            setupEventListeners();
+            startScreen.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+            finalMessage.style.display = 'none';
+            
+            bgmGame.pause();
+            bgmMenu.currentTime = 0;
+            bgmMenu.play().catch(e => console.error("Menu BGM failed to play:", e));
         }
 
         function startGame() {
-            gameState = 'playing';
-            startMenuEl.style.display = 'none';
-            scoreEl.style.display = 'block';
-            resetGame();
-            playMusic('game');
-            gameLoop();
-        }
-
-        function endGame() {
-            if (gameState === 'gameOver') return;
-            
-            if (score >= 100) {
-                specialMessageEl.innerText = '请联系制作者领取神秘礼物🎁';
-            } else {
-                specialMessageEl.innerText = '';
+            if (!gameStarted) {
+                init();
+                gameLoop();
             }
-
-            gameState = 'gameOver';
-            stopAllMusic();
-            finalScoreEl.innerText = `最终分数: ${score}`;
-            
-            let medal = '';
-            if (score >= 80) medal = '💎'; // 钻石
-            else if (score >= 50) medal = '🥇'; // 金
-            else if (score >= 20) medal = '🥈'; // 银
-            else if (score >= 10) medal = '🥉'; // 铜
-            medalEl.innerText = medal ? `获得成就: ${medal}` : '继续努力！';
-            
-            gameOverEl.style.display = 'flex';
-            removeEventListeners();
         }
         
-        function createSeaweed() {
-            const gapHeight = 180;
-            const minHeight = 40;
-            const totalHeight = canvasHeight - gapHeight - (minHeight * 2);
-            
-            const topHeight = Math.random() * totalHeight + minHeight;
-            const bottomHeight = canvasHeight - topHeight - gapHeight;
-
-            seaweeds.push({ x: canvasWidth, y: 0, width: 60, height: topHeight, passed: false });
-            seaweeds.push({ x: canvasWidth, y: canvasHeight - bottomHeight, width: 60, height: bottomHeight });
-
-            // 决定是否生成收集物
-            const collectibleRarity = Math.random();
-            const y_center = topHeight + gapHeight / 2;
-
-            if (score === 21) {
-                // 特殊爱心挑战
-                collectibles.push({ x: canvasWidth + 30, y: y_center - 30, type: 'heart', size: 15 });
-                collectibles.push({ x: canvasWidth + 30, y: y_center, type: 'heart', size: 15 });
-                collectibles.push({ x: canvasWidth + 30, y: y_center + 30, type: 'heart', size: 15 });
-            } else if (collectibleRarity < 0.1) { // 10% 几率生成海星
-                 collectibles.push({ x: canvasWidth + 30, y: y_center, type: 'star', size: 20 });
-            } else if (collectibleRarity < 0.7) { // 60% 几率生成小鱼
-                 collectibles.push({ x: canvasWidth + 30, y: y_center, type: 'fish', size: 15, direction: Math.random() > 0.5 ? 1 : -1, baseY: y_center });
-            }
-        }
-
-        function drawBackground() {
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
-            gradient.addColorStop(0, '#87CEEB'); // 天蓝色 (水面)
-            gradient.addColorStop(0.5, '#4682B4'); // 钢蓝色
-            gradient.addColorStop(1, '#000080'); // 海军蓝 (水底)
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            backgroundStones.forEach(stone => {
-                ctx.beginPath();
-                ctx.arc(stone.x, stone.y, stone.size, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            drawBackground();
-            kotaro.draw();
-        }
-
-        function update() {
-            frame++;
-            kotaro.update();
-
-            // 根据分数调整难度
-            if (score <= 50) moveSpeed = 1.8;
-            else if (score <= 80) moveSpeed = 2.1;
-            else moveSpeed = 2.4;
-
-            if (frame % Math.floor(250 / moveSpeed) === 0) {
-                createSeaweed();
-            }
-
-            seaweeds.forEach(s => { s.x -= moveSpeed; });
-            seaweeds = seaweeds.filter(s => s.x + s.width > 0);
-
-            collectibles.forEach(item => {
-                item.x -= moveSpeed;
-                if (item.type === 'fish') {
-                    item.y = item.baseY + Math.sin(frame * 0.05) * 20 * item.direction;
-                }
-            });
-            collectibles = collectibles.filter(item => item.x + item.size > 0);
-
-            // 碰撞检测
-            for (const s of seaweeds) {
-                if (
-                    kotaro.x < s.x + s.width &&
-                    kotaro.x + kotaro.width > s.x &&
-                    kotaro.y < s.y + s.height &&
-                    kotaro.y + kotaro.height > s.y
-                ) {
-                    if (kotaro.hasShield) {
-                        kotaro.setShield(false);
-                        s.height = 0; // 撞碎效果
-                    } else {
-                        endGame();
-                        return;
-                    }
-                }
-            }
-            
-            // 计分
-            const passingSeaweed = seaweeds.find(s => !s.passed && s.x + s.width < kotaro.x);
-            if (passingSeaweed) {
-                passingSeaweed.passed = true;
-                // 只在通过一组（顶部）时加分
-                if (passingSeaweed.y === 0) {
-                    score++;
-                }
-            }
-
-            // 收集物碰撞检测
-            collectibles.forEach((item, index) => {
-                const distX = (kotaro.x + kotaro.width / 2) - item.x;
-                const distY = (kotaro.y + kotaro.height / 2) - item.y;
-                if (Math.sqrt(distX * distX + distY * distY) < kotaro.width / 2 + item.size) {
-                    switch (item.type) {
-                        case 'fish': score += 1; break;
-                        case 'heart': score += 5; break;
-                        case 'star': kotaro.setShield(true); break;
-                    }
-                    collectibles.splice(index, 1);
-                }
-            });
-
-            scoreEl.innerText = `分数: ${score}`;
-        }
-        
-        function gameLoop() {
-            if (gameState !== 'playing') return;
-            update();
-            draw(); // Redraws background and Kotaro
-            
-            // Draw seaweeds
-            ctx.fillStyle = '#2E8B57'; // 海草颜色
-            seaweeds.forEach(s => { ctx.fillRect(s.x, s.y, s.width, s.height); });
-            
-            // Draw collectibles
-            collectibles.forEach(item => {
-                ctx.save();
-                ctx.translate(item.x, item.y);
-                ctx.font = `${item.size * 2}px serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                let emoji = '🐟';
-                if (item.type === 'star') {
-                    emoji = '⭐';
-                    ctx.filter = 'drop-shadow(0 0 5px gold)';
-                } else if (item.type === 'heart') {
-                    emoji = '❤️';
-                    ctx.filter = 'drop-shadow(0 0 5px pink)';
-                }
-                ctx.fillText(emoji, 0, 0);
-                ctx.restore();
-            });
-
-            requestAnimationFrame(gameLoop);
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            bgmMenu.play().catch(()=>{});
+            bgmGame.play().catch(()=>{});
+            audioUnlocked = true;
+            resetToMenu();
         }
 
         function jump() {
-            kotaro.jump();
+            if (!isGameOver) {
+                otter.vy = settings.jumpStrength;
+            }
         }
 
         function handleInteraction(event) {
-            // 如果事件的目标是按钮，则不执行任何操作，让按钮自己的监听器处理
+            // For touch, prevent default browser actions like scrolling
+            if (event.type === 'touchstart') {
+                event.preventDefault();
+            }
+
+            // If the target is a button, let its own event listener handle it
             if (event.target.tagName === 'BUTTON') {
                 return;
             }
-            // 阻止默认行为，比如手机上的页面滚动或双击缩放
-            event.preventDefault();
-            
+
+            // Unlock audio on the very first interaction
             if (!audioUnlocked) {
-                unlockAndPlayAudio();
+                unlockAudio();
+                return; // The first tap is only for unlocking audio and showing menu
             }
 
-            if (gameState === 'menu') {
+            if (isGameOver) return;
+            
+            if (!gameStarted) {
                 startGame();
-            } else if (gameState === 'playing') {
-                jump();
+            }
+            jump();
+        }
+
+        function updateDifficulty() {
+            let newLevel = 0;
+            if (score > settings.difficulty[2].score) {
+                newLevel = 2;
+            } else if (score > settings.difficulty[1].score) {
+                newLevel = 1;
+            }
+            if (newLevel !== difficultyLevel) {
+                difficultyLevel = newLevel;
+                currentDifficulty = settings.difficulty[difficultyLevel];
             }
         }
 
-        function setupEventListeners() {
-            gameContainer.addEventListener('mousedown', handleInteraction);
-            gameContainer.addEventListener('touchstart', handleInteraction, { passive: false });
+        function createSeaweed(isHeartChallenge = false) {
+            const gap = isHeartChallenge ? H * 0.5 : Math.random() * (settings.seaweed.maxGap - settings.seaweed.minGap) + settings.seaweed.minGap;
+            const minHeight = 50;
+            const availableHeight = H - gap - (minHeight * 2);
+            
+            const topHeight = minHeight + Math.random() * availableHeight;
+            const bottomHeight = H - topHeight - gap;
+
+            seaweeds.push({ x: W, y: 0, width: settings.seaweed.width, height: topHeight, passed: false });
+            seaweeds.push({ x: W, y: H - bottomHeight, width: settings.seaweed.width, height: bottomHeight, passed: false });
+            
+            if (isHeartChallenge) {
+                for (let i = 0; i < 3; i++) {
+                    collectibles.push({
+                        x: W + settings.seaweed.width / 2,
+                        y: topHeight + (gap / 4) * (i + 1),
+                        type: 'heart',
+                        size: settings.collectibles.heartSize
+                    });
+                }
+            } else if (Math.random() < settings.collectibles.chance) {
+                const itemType = Math.random() < settings.collectibles.starChance ? 'star' : 'fish';
+                collectibles.push({
+                    x: W + settings.seaweed.width,
+                    y: topHeight + gap / 2,
+                    type: itemType,
+                    size: settings.collectibles.size,
+                    vx: (Math.random() - 0.5) * 2, // -1 to 1
+                    vy: (Math.random() - 0.5) * 2
+                });
+            }
+        }
+        
+        function createBackgroundRocks() {
+            backgroundRocks = [];
+            for (let i = 0; i < settings.rock.count; i++) {
+                backgroundRocks.push({
+                    x: Math.random() * W,
+                    y: H - Math.random() * (H / 4),
+                    size: Math.random() * (settings.rock.maxSize - settings.rock.minSize) + settings.rock.minSize,
+                    speed: Math.random() * (settings.rock.maxSpeed - settings.rock.minSpeed) + settings.rock.minSpeed,
+                    opacity: 0.1 + Math.random() * 0.4
+                });
+            }
         }
 
-        function removeEventListeners() {
-            gameContainer.removeEventListener('mousedown', handleInteraction);
-            gameContainer.removeEventListener('touchstart', handleInteraction);
+        function update() {
+            if (isGameOver) return;
+            frame++;
+            
+            // Otter physics
+            otter.vy += settings.gravity;
+            otter.y += otter.vy;
+
+            // Check boundaries
+            if (otter.y + otter.height / 2 > H || otter.y - otter.height / 2 < 0) {
+                return gameOver();
+            }
+
+            // Update seaweed
+            if (frame % currentDifficulty.interval === 0) {
+                 if (score === 21) {
+                    createSeaweed(true);
+                } else {
+                    createSeaweed();
+                }
+            }
+
+            for (let i = seaweeds.length - 1; i >= 0; i--) {
+                const s = seaweeds[i];
+                s.x -= currentDifficulty.speed;
+
+                // Collision check
+                if (otter.x < s.x + s.width && otter.x + otter.width > s.x &&
+                    otter.y < s.y + s.height && otter.y + otter.height > s.y) {
+                    if (hasShield) {
+                        hasShield = false;
+                        seaweeds.splice(i, 1); // Destroy seaweed
+                    } else {
+                        return gameOver();
+                    }
+                }
+
+                if (s.x + s.width < otter.x && !s.passed) {
+                    s.passed = true;
+                    // Score is added for every pair of seaweeds passed
+                    if(seaweeds.filter(sw => sw.passed).length % 2 === 0) {
+                        score++;
+                        updateScore();
+                        updateDifficulty();
+                    }
+                }
+                
+                if (s.x + s.width < 0) {
+                    seaweeds.splice(i, 1);
+                }
+            }
+            
+            // Update collectibles
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const item = collectibles[i];
+                item.x -= currentDifficulty.speed;
+                
+                if (item.type === 'fish') {
+                    item.y += item.vy;
+                    if (item.y < 0 || item.y > H) item.vy *= -1;
+                }
+
+                const distX = (otter.x + otter.width / 2) - item.x;
+                const distY = (otter.y + otter.height / 2) - item.y;
+                if (Math.sqrt(distX * distX + distY * distY) < otter.width / 2 + item.size / 2) {
+                    switch (item.type) {
+                        case 'fish': score += 1; break;
+                        case 'star': hasShield = true; break;
+                        case 'heart': score += 5; break;
+                    }
+                    collectibles.splice(i, 1);
+                    updateScore();
+                    updateDifficulty();
+                } else if (item.x + item.size < 0) {
+                    collectibles.splice(i, 1);
+                }
+            }
+
+            // Check for 21-point message
+            if (score >= 21 && score < 26) { // Show for a few points
+                loveMessage.style.display = 'flex';
+            } else {
+                loveMessage.style.display = 'none';
+            }
+            
+            // Check for 100-point win
+            if (score >= 100) {
+                return gameOver(true);
+            }
+        }
+        
+        function updateScore() {
+            scoreEl.textContent = `得分: ${score}`;
         }
 
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            
+            // Draw background rocks
+            backgroundRocks.forEach(rock => {
+                rock.x -= rock.speed;
+                if (rock.x + rock.size < 0) {
+                    rock.x = W + rock.size;
+                }
+                ctx.fillStyle = `rgba(0, 0, 0, ${rock.opacity})`;
+                ctx.beginPath();
+                ctx.arc(rock.x, rock.y, rock.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw otter
+            ctx.save();
+            ctx.translate(otter.x + otter.width / 2, otter.y + otter.height / 2);
+            ctx.rotate(Math.PI / 180 * (otter.vy * 5));
+            ctx.fillStyle = '#D2B48C'; // Tan color for otter
+            ctx.fillRect(-otter.width / 2, -otter.height / 2, otter.width, otter.height);
+            ctx.restore();
+            
+            if (hasShield) {
+                ctx.strokeStyle = 'yellow';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(otter.x + otter.width/2, otter.y + otter.height/2, otter.width, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Draw seaweeds
+            seaweeds.forEach(s => {
+                ctx.fillStyle = '#2E8B57'; // SeaGreen
+                ctx.fillRect(s.x, s.y, s.width, s.height);
+            });
+            
+            // Draw collectibles
+            collectibles.forEach(item => {
+                 ctx.font = `${item.size}px Arial`;
+                 let symbol = '';
+                 switch(item.type) {
+                     case 'fish': symbol = '🐟'; break;
+                     case 'star': symbol = '⭐'; break;
+                     case 'heart': symbol = '❤️'; break;
+                 }
+                 ctx.fillText(symbol, item.x - item.size/2, item.y + item.size/2);
+            });
+        }
+        
+        function getMedal(s) {
+            if (s > 90) return '💎'; // Diamond
+            if (s > 70) return '🥇'; // Gold
+            if (s > 40) return '🥈'; // Silver
+            if (s > 10) return '🥉'; // Bronze
+            return '🐠'; // Fish
+        }
+
+        function gameOver(isWin = false) {
+            if (isGameOver) return;
+            isGameOver = true;
+            gameStarted = false;
+            
+            bgmGame.pause();
+
+            if (isWin) {
+                finalMessage.style.display = 'flex';
+            } else {
+                gameOverScreen.style.display = 'flex';
+                finalScoreEl.textContent = `最终得分: ${score}`;
+                medalEl.textContent = getMedal(score);
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            if (!isGameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('resize', setupCanvas);
+        
+        // Use a single handler for starting game and jumping
+        gameContainer.addEventListener('click', handleInteraction);
+        gameContainer.addEventListener('touchstart', handleInteraction, { passive: false });
+
+        // Separate, explicit listeners for buttons
         restartButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            resetGame();
-            startGame();
+            e.stopPropagation(); // Stop event from bubbling to container
+            init();
+            gameLoop();
         });
-
+        
         menuButton.addEventListener('click', (e) => {
             e.stopPropagation();
-            showMenu();
+            resetToMenu();
         });
 
-        // --- 初始化游戏 ---
-        kotaro.setShield(false); // 确保初始图像正确
-        setCanvasDimensions();
-        showMenu();
-
+        // --- Initial Setup ---
+        setupCanvas();
+        createBackgroundRocks();
+        resetToMenu();
     </script>
 </body>
 </html>
