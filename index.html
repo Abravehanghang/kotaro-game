@@ -21,7 +21,8 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            /* 从浅蓝到深蓝的渐变 */
+            background: linear-gradient(180deg, #87CEEB 0%, #4682B4 70%, #001f3f 100%);
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             position: fixed;
@@ -35,7 +36,8 @@
             max-width: 800px;
             border: none;
             overflow: hidden;
-            background: linear-gradient(180deg, #87CEEB 0%, #003366 100%);
+            /* 从浅蓝到深蓝的渐变，与body匹配但更深邃 */
+            background: linear-gradient(180deg, #6495ED 0%, #1E90FF 50%, #003366 100%);
             box-shadow: 0 0 30px rgba(0, 168, 204, 0.5);
             touch-action: none;
             -webkit-touch-callout: none;
@@ -44,7 +46,7 @@
         @media (max-width: 768px) and (orientation: portrait) {
             #gameContainer {
                 width: 100vw;
-                height: 70vh;
+                height: 70vh; /* 减少高度，避免画面过长 */
                 max-height: 500px;
                 border-radius: 0;
             }
@@ -96,596 +98,466 @@
                 left: 15px;
             }
         }
-        #gameOver {
+        #gameOver, #startScreen, #secretEnding {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            background: rgba(0, 20, 40, 0.85);
+            padding: 30px;
+            border-radius: 15px;
             text-align: center;
             color: #fff;
             display: none;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #00a8cc;
-            max-width: 90%;
-            box-sizing: border-box;
+            width: 80%;
+            max-width: 350px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: 2px solid rgba(135, 206, 250, 0.7);
         }
-        #startScreen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #00a8cc;
-            max-width: 90%;
-            box-sizing: border-box;
+        #gameOver h2, #startScreen h1, #secretEnding h2 {
+            margin: 0 0 15px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px #000;
         }
-        @media (max-width: 480px) {
-            #gameOver, #startScreen {
-                padding: 20px;
-                font-size: 14px;
-            }
-            #gameOver h2, #startScreen h1 {
-                font-size: 20px;
-                margin: 10px 0;
-            }
+        #startScreen p {
+            font-size: 16px;
+            margin: 15px 0;
+            line-height: 1.5;
         }
-        button {
-            background: linear-gradient(145deg, #00a8cc, #0077aa);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
+        #finalScore, #medalContainer {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        #medal {
+            font-size: 40px;
+            display: block;
+            margin-top: 10px;
+        }
+        #buttonContainer {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            min-height: 48px;
-            min-width: 120px;
+            border: none;
+            border-radius: 8px;
+            background: #4682B4;
+            color: white;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
-        button:active {
-            transform: scale(0.95);
+        .btn:hover {
+            background-color: #5a9bd5;
+        }
+        .btn:active {
+            transform: translateY(2px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        @media (max-width: 480px) {
-            button {
-                padding: 12px 24px;
-                font-size: 16px;
-                min-height: 44px;
-            }
-        }
-        #tapHint {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 16px;
-            text-align: center;
-            pointer-events: none;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         <div id="ui">
-            <div id="score">分数: 0</div>
+            <div id="score" class="hidden">分数: 0</div>
             <div id="startScreen">
-                <h1 style="color: #00a8cc; margin-bottom: 20px;">🦦 小太郎の大冒险</h1>
-                <p>帮助可爱的小太郎穿越海草丛林！</p>
-                <p>收集小鱼🐟和海星⭐，躲避危险！</p>
-                <button id="startButton">开始游戏</button>
+                <h1>小太郎の大冒险</h1>
+                <p>轻触屏幕，帮助小太郎向上游动，<br>穿过海草，躲避危险！</p>
+                <p style="font-size: 14px; opacity: 0.8;">轻触屏幕开始游戏</p>
             </div>
             <div id="gameOver">
-                <h2 style="color: #ff6b6b;">游戏结束！</h2>
-                <p id="finalScore">最终分数: 0</p>
-                <p id="medal" style="font-size: 20px; margin-top: 15px; color: #f0e68c;"></p>
-                <button id="mainMenuButton">返回主界面</button>
-                <button id="restartButton">再玩一次</button>
+                <h2>游戏结束</h2>
+                <div id="finalScore"></div>
+                <div id="medalContainer">
+                    <span>你的成就:</span>
+                    <span id="medal"></span>
+                </div>
+                <div id="buttonContainer">
+                    <button id="restartButton" class="btn">再玩一次</button>
+                    <button id="mainMenuButton" class="btn">返回主菜单</button>
+                </div>
             </div>
-            <div id="tapHint" style="display: none;">
-                点击屏幕控制小太郎 🦦
+            <div id="secretEnding">
+                <h2>恭喜你，勇者！</h2>
+                <p>你已达到100分的传奇成就！<br>请联系游戏制作者，<br>领取一份神秘礼物！🎁</p>
+                <button id="secretRestartButton" class="btn" style="margin-top: 20px;">重新开始</button>
             </div>
         </div>
     </div>
 
+    <!-- 音乐文件: 请将 'path/to/...' 替换为您自己的音频文件路径 -->
     <audio id="bgm-menu" loop src="gymnopedie"></audio>
     <audio id="bgm-game" loop src="arabesque"></audio>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreDisplay = document.getElementById('score');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const medalDisplay = document.getElementById('medal');
+        const restartButton = document.getElementById('restartButton');
+        const mainMenuButton = document.getElementById('mainMenuButton');
+        const secretEndingScreen = document.getElementById('secretEnding');
+        const secretRestartButton = document.getElementById('secretRestartButton');
+
         const bgmMenu = document.getElementById('bgm-menu');
         const bgmGame = document.getElementById('bgm-game');
 
-        let isAudioUnlocked = false;
-        function unlockAudio() {
-            if (isAudioUnlocked) return;
-            const promiseMenu = bgmMenu.play();
-            if (promiseMenu !== undefined) {
-                promiseMenu.then(() => {
-                    bgmMenu.pause();
-                }).catch(() => {});
-            }
-            const promiseGame = bgmGame.play();
-            if (promiseGame !== undefined) {
-                promiseGame.then(() => {
-                    bgmGame.pause();
-                }).catch(() => {});
-            }
-            isAudioUnlocked = true;
-        }
+        let canvasWidth, canvasHeight;
+        let kotaro, gravity, jumpStrength, seaweeds, collectibles, rocks, frame, score, gameState, moveSpeed;
+        let hasShield = false;
+        let specialEventTriggered = false;
+        let audioUnlocked = false;
 
-        function playMusic(musicToPlay) {
-            if (!isAudioUnlocked) return;
-            const musicToStop = musicToPlay === bgmMenu ? bgmGame : bgmMenu;
-            musicToStop.pause();
-            musicToStop.currentTime = 0;
-            musicToPlay.currentTime = 0;
-            musicToPlay.play().catch(e => console.error("音乐播放失败:", e));
-        }
-
-        function resizeCanvas() {
-            const container = document.getElementById('gameContainer');
-            const rect = container.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        let gameState = 'start';
-        let score = 0;
-        let animationId;
-        let heartChallengeTriggered = false;
-
-        function getScale() {
-            return Math.min(canvas.width / 800, canvas.height / 600);
-        }
-
-        const otter = {
-            x: 0, y: 0, width: 60, height: 60,
-            velocity: 0, gravity: 0.12, jumpStrength: -4.2, rotation: 0,
-            isShielded: false
+        const kotaroSprite = {
+            normal: '🦦',
+            shielded: '✨🦦✨'
         };
 
-        function resetOtterPosition() {
-            const scale = getScale();
-            otter.x = 100 * scale;
-            otter.y = canvas.height / 2;
-            otter.width = 60 * scale;
-            otter.height = 60 * scale;
-            otter.isShielded = false;
+        function resizeCanvas() {
+            canvas.width = gameContainer.clientWidth;
+            canvas.height = gameContainer.clientHeight;
+            canvasWidth = canvas.width;
+            canvasHeight = canvas.height;
         }
 
-        let seaweeds = [];
-        let collectibles = [];
-        let bubbles = [];
-        let scenery = [];
-        let seaweedWidth = 70;
-
-        function createSeaweed(x, gap) {
-            const scale = getScale();
-            const minHeight = 60 * scale;
-            const gapSize = gap * scale;
-            const availableHeight = canvas.height - gapSize;
-            if (availableHeight < 2 * minHeight) {
-                return { x: x, topHeight: availableHeight / 2, bottomHeight: availableHeight / 2, passed: false };
-            }
-            const maxTopHeight = availableHeight - minHeight;
-            const topHeight = minHeight + Math.random() * (maxTopHeight - minHeight);
-            const bottomHeight = availableHeight - topHeight;
-            return { x: x, topHeight: topHeight, bottomHeight: bottomHeight, passed: false };
+        function init() {
+            resizeCanvas();
+            resetGame();
+            showStartScreen();
+            gameLoop();
         }
 
-        function createBubble(x, y, count = 1) {
-            for (let i = 0; i < count; i++) {
-                const scale = getScale();
-                bubbles.push({
-                    x: x + Math.random() * 20 * scale - 10 * scale,
-                    y: y,
-                    size: (Math.random() * 8 + 4) * scale,
-                    velocity: -(Math.random() * 2 + 1) * scale,
-                    opacity: Math.random() * 0.5 + 0.5,
-                    life: 100
-                });
+        function resetGame() {
+            kotaro = {
+                x: canvasWidth / 4,
+                y: canvasHeight / 2,
+                size: Math.min(canvasWidth, canvasHeight) * 0.08,
+                velocity: 0
+            };
+            gravity = 0.25;
+            jumpStrength = -5;
+            seaweeds = [];
+            collectibles = [];
+            rocks = [];
+            frame = 0;
+            score = 0;
+            moveSpeed = 1.8;
+            hasShield = false;
+            specialEventTriggered = false;
+            scoreDisplay.textContent = '分数: 0';
+            scoreDisplay.classList.add('hidden');
+            gameOverScreen.style.display = 'none';
+            secretEndingScreen.style.display = 'none';
+        }
+
+        function showStartScreen() {
+            gameState = 'startScreen';
+            startScreen.style.display = 'block';
+            gameOverScreen.style.display = 'none';
+            scoreDisplay.classList.add('hidden');
+            if (audioUnlocked) {
+                bgmGame.pause();
+                bgmMenu.currentTime = 0;
+                bgmMenu.play().catch(e => console.log("Menu BGM play failed", e));
             }
+        }
+
+        function startGame() {
+            resetGame();
+            gameState = 'playing';
+            startScreen.style.display = 'none';
+            scoreDisplay.classList.remove('hidden');
+            if (audioUnlocked) {
+                bgmMenu.pause();
+                bgmGame.currentTime = 0;
+                bgmGame.play().catch(e => console.log("Game BGM play failed", e));
+            }
+        }
+
+        function jump() {
+            kotaro.velocity = jumpStrength;
+        }
+
+        function createSeaweed() {
+            const minGap = kotaro.size * 3.5;
+            const maxGap = kotaro.size * 4.5;
+            let gap = Math.max(minGap, maxGap - score * 2);
+
+            const minHeight = 50;
+            const availableHeight = canvasHeight - gap - minHeight * 2;
+            const topHeight = minHeight + Math.random() * availableHeight;
+            const bottomHeight = canvasHeight - topHeight - gap;
+            
+            seaweeds.push({
+                x: canvasWidth,
+                width: 50,
+                topHeight: topHeight,
+                bottomY: canvasHeight - bottomHeight,
+                bottomHeight: bottomHeight,
+                passed: false
+            });
+
+            if (score > 0 && score % 7 === 0) {
+                spawnCollectible(canvasWidth + 25, topHeight + gap / 2, 'star');
+            } else if (score === 21 && !specialEventTriggered) {
+                specialEventTriggered = true;
+                for (let i = 0; i < 3; i++) {
+                    spawnCollectible(canvasWidth + 25, topHeight + gap / 2 - 30 + i * 30, 'heart');
+                }
+            } else if (Math.random() < 0.5) {
+                spawnCollectible(canvasWidth + 25, topHeight + gap / 2, 'fish');
+            }
+        }
+
+        function spawnCollectible(x, y, type) {
+            collectibles.push({
+                x: x,
+                y: y,
+                type: type,
+                size: type === 'star' ? 18 : 15,
+                initialY: y,
+                angle: Math.random() * Math.PI * 2
+            });
         }
         
         function createRock() {
-            const scale = getScale();
-            const size = (Math.random() * 40 + 30) * scale;
-            const rock = {
-                x: canvas.width + size,
-                y: canvas.height,
-                size: size,
-                shape: [
-                    { x: -size / 2, y: 0 }, { x: -size / 1.5, y: -size / 3 },
-                    { x: -size / 3, y: -size / 1.5 }, { x: size / 3, y: -size / 1.2 },
-                    { x: size / 1.5, y: -size / 4 }, { x: size / 2, y: 0 },
-                ]
-            };
-            scenery.push(rock);
+            rocks.push({
+                x: canvasWidth,
+                y: canvasHeight - 20 - Math.random() * 40,
+                size: Math.random() * 20 + 10
+            });
         }
         
-        function drawScenery() {
-            ctx.fillStyle = '#4a4a4a';
-            scenery.forEach(rock => {
-                ctx.beginPath();
-                ctx.moveTo(rock.x + rock.shape[0].x, rock.y + rock.shape[0].y);
-                for (let i = 1; i < rock.shape.length; i++) {
-                    ctx.lineTo(rock.x + rock.shape[i].x, rock.y + rock.shape[i].y);
-                }
-                ctx.closePath();
-                ctx.fill();
-            });
-        }
-
-        function drawOtter() {
-            ctx.save();
-            ctx.translate(otter.x + otter.width / 2, otter.y + otter.height / 2);
-            ctx.rotate(otter.rotation);
-
-            if (otter.isShielded) {
-                const shieldGradient = ctx.createRadialGradient(0, 0, otter.width / 2, 0, 0, otter.width / 2 + 10);
-                shieldGradient.addColorStop(0, 'rgba(173, 216, 230, 0)');
-                shieldGradient.addColorStop(0.8, 'rgba(173, 216, 230, 0.5)');
-                shieldGradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
-                ctx.fillStyle = shieldGradient;
-                ctx.beginPath();
-                ctx.arc(0, 0, otter.width / 2 + 10, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.beginPath();
-            ctx.arc(0, 0, otter.width / 2 + 5, 0, Math.PI * 2);
-            ctx.fill();
-            let emoji = otter.isShielded ? '😎' : '🦦';
-            if (otter.velocity > 2) emoji = '😵';
-            const fontSize = Math.max(24, otter.width * 0.8);
-            ctx.font = `${fontSize}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.fillText(emoji, 2, 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(emoji, 0, 0);
-            ctx.restore();
-        }
-        
-        function drawSeaweed(seaweed) {
-            const scale = getScale();
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#2d5a3d');
-            gradient.addColorStop(0.5, '#4a7c59');
-            gradient.addColorStop(1, '#2d5a3d');
-            ctx.fillStyle = gradient;
-            const leafWidth = 22 * scale;
-            const leafCount = 3;
-            for(let i = 0; i < leafCount; i++) {
-                const waveOffset = Math.sin(Date.now() * 0.003 + i) * 8 * scale;
-                ctx.beginPath();
-                ctx.moveTo(seaweed.x + i * leafWidth + waveOffset, 0);
-                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 12 * scale + waveOffset, seaweed.topHeight / 2, seaweed.x + i * leafWidth + waveOffset, seaweed.topHeight);
-                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 25 * scale + waveOffset, seaweed.topHeight / 2, seaweed.x + i * leafWidth + leafWidth + waveOffset, 0);
-                ctx.fill();
-            }
-            for(let i = 0; i < leafCount; i++) {
-                const waveOffset = Math.sin(Date.now() * 0.004 + i + 1) * 6 * scale;
-                ctx.beginPath();
-                ctx.moveTo(seaweed.x + i * leafWidth + waveOffset, canvas.height);
-                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 12 * scale + waveOffset, canvas.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + waveOffset, canvas.height - seaweed.bottomHeight);
-                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 25 * scale + waveOffset, canvas.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + leafWidth + waveOffset, canvas.height);
-                ctx.fill();
-            }
-        }
-
-        function drawCollectibles() {
-            collectibles.forEach(item => {
-                ctx.save();
-                ctx.font = `${item.size * 2}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                if(item.type === 'starfish') {
-                    ctx.shadowColor = 'yellow';
-                    ctx.shadowBlur = 15;
-                }
-                ctx.fillText(item.emoji, item.x, item.y);
-                ctx.restore();
-            });
-        }
-
-        function drawBubbles() {
-            bubbles.forEach((bubble, index) => {
-                ctx.save();
-                ctx.globalAlpha = bubble.opacity;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.beginPath();
-                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-                bubble.y += bubble.velocity;
-                bubble.life--;
-                bubble.opacity *= 0.995;
-                if (bubble.life <= 0 || bubble.y < 0) bubbles.splice(index, 1);
-            });
-        }
-
-        function drawBackground() {
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#87CEEB');
-            gradient.addColorStop(0.7, '#4682B4');
-            gradient.addColorStop(1, '#003366');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            drawScenery();
-            if (Math.random() < 0.02) createBubble(Math.random() * canvas.width, canvas.height + 10);
-        }
-
-        function checkSeaweedCollision() {
-            const scale = getScale();
-            const currentSeaweedWidth = seaweedWidth * scale;
-            const collisionMargin = 8 * scale;
-            for (let i = 0; i < seaweeds.length; i++) {
-                const seaweed = seaweeds[i];
-                if (otter.x + collisionMargin < seaweed.x + currentSeaweedWidth &&
-                    otter.x + otter.width - collisionMargin > seaweed.x) {
-                    if (otter.y + collisionMargin < seaweed.topHeight ||
-                        otter.y + otter.height - collisionMargin > canvas.height - seaweed.bottomHeight) {
-                        return i;
-                    }
-                }
-            }
-            return -1;
-        }
-
-        function endGame() {
-            if (gameState === 'gameOver') return;
-            gameState = 'gameOver';
-
-            const finalScoreEl = document.getElementById('finalScore');
-            finalScoreEl.textContent = '最终分数: ' + score;
-            const medalEl = document.getElementById('medal');
-            if (score >= 100) medalEl.innerHTML = "请联系制作者领取神秘礼物🎁";
-            else if (score >= 70) medalEl.innerHTML = "💎 钻石小太郎奖牌 💎";
-            else if (score >= 50) medalEl.innerHTML = "🥇 金鱼奖牌 🥇";
-            else if (score >= 30) medalEl.innerHTML = "🥈 银鱼奖牌 🥈";
-            else if (score >= 10) medalEl.innerHTML = "🥉 铜鱼奖牌 🥉";
-            else medalEl.innerHTML = "再接再厉！💪";
-            
-            document.getElementById('gameOver').style.display = 'block';
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('tapHint').style.display = 'none';
-            
-            playMusic(bgmMenu);
-        }
-
         function update() {
             if (gameState !== 'playing') return;
-            const scale = getScale();
 
-            let moveSpeed, seaweedSpacing, currentSeaweedGap;
-            if (score <= 50) {
-                moveSpeed = 1.8; seaweedSpacing = 400; currentSeaweedGap = 240;
-            } else if (score <= 80) {
-                moveSpeed = 2.1; seaweedSpacing = 360; currentSeaweedGap = 210;
-            } else {
-                moveSpeed = 2.5; seaweedSpacing = 320; currentSeaweedGap = 190;
-            }
-            moveSpeed *= scale;
-            seaweedSpacing *= scale;
-
-            otter.velocity += otter.gravity * scale;
-            otter.y += otter.velocity;
-            otter.rotation = Math.max(-0.5, Math.min(0.5, otter.velocity * 0.05));
+            frame++;
             
-            seaweeds.forEach((seaweed, index) => {
-                seaweed.x -= moveSpeed;
-                if (!seaweed.passed && seaweed.x + (seaweedWidth * scale) < otter.x) {
-                    seaweed.passed = true;
-                    score++;
-                    document.getElementById('score').textContent = '分数: ' + score;
+            kotaro.velocity += gravity;
+            kotaro.y += kotaro.velocity;
+            
+            if (score > 100 && gameState !== 'secretEnding') {
+                showSecretEnding();
+                return;
+            }
+
+            if (kotaro.y < 0 || kotaro.y + kotaro.size > canvasHeight) {
+                endGame();
+                return;
+            }
+
+            if (frame % 200 === 0 || seaweeds.length === 0) {
+                createSeaweed();
+            }
+            if (frame % 150 === 0) {
+                createRock();
+            }
+
+            if (score > 80) moveSpeed = 2.4;
+            else if (score > 50) moveSpeed = 2.1;
+            else moveSpeed = 1.8;
+
+            seaweeds.forEach((sw, index) => {
+                sw.x -= moveSpeed;
+
+                const kotaroCenterX = kotaro.x + kotaro.size / 2;
+                const kotaroCenterY = kotaro.y + kotaro.size / 2;
+                const kotaroRadius = kotaro.size / 2;
+
+                const topPipe = { x: sw.x, y: 0, width: sw.width, height: sw.topHeight };
+                const bottomPipe = { x: sw.x, y: sw.bottomY, width: sw.width, height: sw.bottomHeight };
+
+                if (checkCollision(kotaro, topPipe) || checkCollision(kotaro, bottomPipe)) {
+                    if (hasShield) {
+                        hasShield = false;
+                        seaweeds.splice(index, 1);
+                    } else {
+                        endGame();
+                        return;
+                    }
                 }
-                if (seaweed.x + (seaweedWidth * scale) < 0) seaweeds.splice(index, 1);
+
+                if (!sw.passed && sw.x + sw.width < kotaro.x) {
+                    sw.passed = true;
+                    score++;
+                    scoreDisplay.textContent = `分数: ${score}`;
+                }
+
+                if (sw.x + sw.width < 0) {
+                    seaweeds.splice(index, 1);
+                }
             });
 
             collectibles.forEach((item, index) => {
                 item.x -= moveSpeed;
-                item.y += item.vy;
-                if (item.y <= item.yMin || item.y >= item.yMax) item.vy *= -1;
+                
+                if (item.type === 'fish') {
+                    item.angle += 0.05;
+                    item.y = item.initialY + Math.sin(item.angle) * 20; 
+                }
 
-                const distX = (otter.x + otter.width / 2) - item.x;
-                const distY = (otter.y + otter.height / 2) - item.y;
-                if (Math.sqrt(distX * distX + distY * distY) < otter.width / 2 + item.size) {
+                const distX = (kotaro.x + kotaro.size / 2) - item.x;
+                const distY = (kotaro.y + kotaro.size / 2) - item.y;
+                if (Math.sqrt(distX * distX + distY * distY) < kotaro.size / 2 + item.size) {
                     switch (item.type) {
                         case 'fish': score += 1; break;
                         case 'heart': score += 5; break;
-                        case 'starfish': otter.isShielded = true; break;
+                        case 'star': hasShield = true; break;
                     }
-                    createBubble(item.x, item.y, 8);
                     collectibles.splice(index, 1);
-                    document.getElementById('score').textContent = '分数: ' + score;
+                    scoreDisplay.textContent = `分数: ${score}`;
                 } else if (item.x + item.size < 0) {
                     collectibles.splice(index, 1);
                 }
             });
 
-            scenery.forEach((rock, index) => {
+            rocks.forEach((rock, index) => {
                 rock.x -= moveSpeed * 0.5;
-                if (rock.x + rock.size < 0) scenery.splice(index, 1);
+                if (rock.x + rock.size < 0) {
+                    rocks.splice(index, 1);
+                }
             });
-            if (Math.random() < 0.01 && scenery.length < 5) createRock();
-
-            if (seaweeds.length === 0 || seaweeds[seaweeds.length - 1].x < canvas.width - seaweedSpacing) {
-                const newSeaweedX = canvas.width;
-                const newSeaweed = createSeaweed(newSeaweedX, currentSeaweedGap);
-                seaweeds.push(newSeaweed);
-                const gapY_center = newSeaweed.topHeight + (currentSeaweedGap * scale / 2);
-                const itemY = gapY_center + (Math.random() - 0.5) * (currentSeaweedGap * scale * 0.4);
-                const yMin = newSeaweed.topHeight + 30 * scale;
-                const yMax = canvas.height - newSeaweed.bottomHeight - 30 * scale;
-                
-                const createCollectible = (type, emoji, size) => ({
-                    type, emoji, size: size * scale,
-                    x: newSeaweedX + (seaweedWidth * scale / 2), y: itemY,
-                    vy: (Math.random() > 0.5 ? 1 : -1) * 0.5 * scale,
-                    yMin, yMax
-                });
-
-                if (score >= 21 && !heartChallengeTriggered) {
-                    heartChallengeTriggered = true;
-                    for (let i = 0; i < 3; i++) {
-                        const heart = createCollectible('heart', '❤️', 12);
-                        heart.x += i * 40 * scale;
-                        collectibles.push(heart);
-                    }
-                } else {
-                    if (Math.random() < 0.1) collectibles.push(createCollectible('starfish', '⭐', 15));
-                    else if (Math.random() < 0.7) collectibles.push(createCollectible('fish', '🐟', 12));
-                }
-            }
-
-            if (score >= 100) { endGame(); return; }
-            if (otter.y <= 5 || otter.y + otter.height >= canvas.height - 5) { endGame(); return; }
-            const collidedSeaweedIndex = checkSeaweedCollision();
-            if (collidedSeaweedIndex > -1) {
-                if (otter.isShielded) {
-                    otter.isShielded = false;
-                    createBubble(otter.x + otter.width / 2, otter.y + otter.height / 2, 20);
-                    seaweeds.splice(collidedSeaweedIndex, 1);
-                } else {
-                    endGame();
-                }
-            }
         }
 
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            drawBubbles();
-            drawCollectibles();
-            seaweeds.forEach(drawSeaweed);
-            drawOtter();
+        function checkCollision(kotaro, pipe) {
+            return kotaro.x < pipe.x + pipe.width &&
+                   kotaro.x + kotaro.size > pipe.x &&
+                   kotaro.y < pipe.y + pipe.height &&
+                   kotaro.y + kotaro.size > pipe.y;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            drawRocks();
+
+            seaweeds.forEach(sw => {
+                ctx.fillStyle = '#2E8B57';
+                ctx.fillRect(sw.x, 0, sw.width, sw.topHeight);
+                ctx.fillRect(sw.x, sw.bottomY, sw.width, sw.bottomHeight);
+            });
+
+            collectibles.forEach(item => {
+                ctx.font = `${item.size * 2}px Arial`;
+                let emoji;
+                switch (item.type) {
+                    case 'fish': emoji = '🐟'; break;
+                    case 'star': emoji = '⭐'; break;
+                    case 'heart': emoji = '❤️'; break;
+                }
+                ctx.fillText(emoji, item.x - item.size, item.y + item.size);
+            });
+            
+            ctx.font = `${kotaro.size}px Arial`;
+            ctx.fillText(hasShield ? kotaroSprite.shielded : kotaroSprite.normal, kotaro.x, kotaro.y + kotaro.size);
+        }
+
+        function drawRocks() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            rocks.forEach(rock => {
+                ctx.beginPath();
+                ctx.arc(rock.x, rock.y, rock.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
 
         function gameLoop() {
-            if(gameState === 'playing') {
-                update();
-            }
-            render();
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function jump() {
-            if (gameState === 'playing') {
-                const scale = getScale();
-                otter.velocity = otter.jumpStrength * scale;
-                createBubble(otter.x, otter.y + otter.height / 2, 3);
-            }
-        }
-
-        function showStartScreen() {
-            gameState = 'start';
-            resetOtterPosition();
-            document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('startScreen').style.display = 'block';
-            document.getElementById('tapHint').style.display = 'none';
-            playMusic(bgmMenu);
-        }
-
-        function startGame() {
-            resizeCanvas();
-            resetOtterPosition();
-            gameState = 'playing';
-            score = 0;
-            document.getElementById('score').textContent = '分数: 0';
-            otter.velocity = 0;
-            otter.rotation = 0;
-            seaweeds = [];
-            collectibles = [];
-            bubbles = [];
-            scenery = [];
-            heartChallengeTriggered = false;
-
-            playMusic(bgmGame);
-
-            const scale = getScale();
-            for (let i = 0; i < 2; i++) {
-                seaweeds.push(createSeaweed(canvas.width + i * (400 * scale), 240));
-            }
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('tapHint').style.display = 'block';
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
         }
         
-        // --- Event Listeners ---
+        function getMedal(score) {
+            if (score >= 80) return '💎 白金小太郎奖章';
+            if (score >= 60) return '🥇 黄金小太郎奖章';
+            if (score >= 40) return '🥈 白银小鱼奖章';
+            if (score >= 20) return '🥉 青铜海草奖章';
+            return '参与奖';
+        }
+
+        function endGame() {
+            gameState = 'gameOver';
+            gameOverScreen.style.display = 'block';
+            finalScoreDisplay.textContent = `最终得分: ${score}`;
+            medalDisplay.textContent = getMedal(score);
+            if (audioUnlocked) {
+                bgmGame.pause();
+            }
+        }
+        
+        function showSecretEnding() {
+            gameState = 'secretEnding';
+            secretEndingScreen.style.display = 'block';
+            scoreDisplay.classList.add('hidden');
+            if (audioUnlocked) {
+                bgmGame.pause();
+                bgmMenu.play().catch(e => {});
+            }
+        }
+
+        function initAudio() {
+            if (audioUnlocked) return;
+            const playPromise1 = bgmMenu.play();
+            if (playPromise1 !== undefined) {
+                playPromise1.then(() => bgmMenu.pause()).catch(e => {});
+            }
+            const playPromise2 = bgmGame.play();
+            if (playPromise2 !== undefined) {
+                playPromise2.then(() => bgmGame.pause()).catch(e => {});
+            }
+            audioUnlocked = true;
+        }
+
         function handleInteraction(event) {
-            unlockAudio();
-            // 阻止默认行为，如页面滚动或双击缩放
             event.preventDefault();
 
-            // 如果点击的是按钮，让按钮自己的事件处理器来处理
-            if (event.target.tagName === 'BUTTON') {
-                return;
+            if (event.target.tagName === 'BUTTON') return;
+            
+            if (!audioUnlocked) {
+                initAudio();
             }
 
-            // 根据游戏状态执行相应操作
-            if (gameState === 'playing') {
-                jump();
-            } else if (gameState === 'start') {
-                // 如果在开始界面，任何非按钮点击都视为开始游戏
+            if (gameState === 'startScreen') {
                 startGame();
-            } else if (gameState === 'gameOver') {
-                 // 在游戏结束界面，任何非按钮点击都视为返回主菜单
-                showStartScreen();
+            } else if (gameState === 'playing') {
+                jump();
             }
         }
-        
-        document.getElementById('startButton').addEventListener('click', () => {
-            unlockAudio();
+
+        // Event Listeners
+        window.addEventListener('resize', resizeCanvas);
+
+        gameContainer.addEventListener('mousedown', handleInteraction);
+        gameContainer.addEventListener('touchstart', handleInteraction, { passive: false });
+
+        restartButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
             startGame();
         });
-        document.getElementById('restartButton').addEventListener('click', () => {
-            unlockAudio();
-            startGame();
-        });
-        document.getElementById('mainMenuButton').addEventListener('click', () => {
-            unlockAudio();
+
+        mainMenuButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            resetGame();
             showStartScreen();
         });
 
-        // 为电脑和手机设置统一的监听器
-        document.getElementById('gameContainer').addEventListener('click', handleInteraction);
-        document.getElementById('gameContainer').addEventListener('touchstart', handleInteraction, { passive: false });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                unlockAudio();
-                 if (gameState === 'playing') {
-                    jump();
-                } else if (gameState === 'start') {
-                    startGame();
-                }
-            }
+        secretRestartButton.addEventListener('click', () => {
+            secretEndingScreen.style.display = 'none';
+            resetGame();
+            showStartScreen();
         });
 
-        // 初始化
-        showStartScreen();
-        gameLoop();
+        init();
     </script>
 </body>
 </html>
