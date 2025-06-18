@@ -204,44 +204,51 @@
     <!-- 音乐文件: 请确保文件名与您上传到GitHub的文件名完全一致 -->
     <audio id="bgm-menu" loop src="gymnopedie.mp3"></audio>
     <audio id="bgm-game" loop src="arabesque.mp3"></audio>
-
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
         const bgmMenu = document.getElementById('bgm-menu');
         const bgmGame = document.getElementById('bgm-game');
 
         let isAudioUnlocked = false;
+
         function unlockAudio() {
             if (isAudioUnlocked) return;
-            // 尝试播放并立即暂停，这是解锁音频的常用技巧
+            // A common technique to unlock audio context in browsers.
             bgmMenu.play().catch(() => {});
             bgmMenu.pause();
             bgmGame.play().catch(() => {});
             bgmGame.pause();
             isAudioUnlocked = true;
+            console.log("Audio unlocked.");
         }
 
         function playMusic(music) {
             if (!isAudioUnlocked) return;
-            if (music === bgmMenu) {
-                bgmGame.pause();
-                bgmGame.currentTime = 0;
-            } else {
-                bgmMenu.pause();
-                bgmMenu.currentTime = 0;
+            const otherMusic = music === bgmMenu ? bgmGame : bgmMenu;
+            otherMusic.pause();
+            otherMusic.currentTime = 0;
+            
+            if (music.paused) {
+                music.currentTime = 0;
+                music.play().catch(e => console.error("Music playback failed:", e));
             }
-            music.currentTime = 0;
-            music.play().catch(e => console.error("音乐播放失败:", e));
         }
 
         function resizeCanvas() {
-            const container = document.getElementById('gameContainer');
-            const rect = container.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
+            const rect = gameContainer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
-        resizeCanvas();
+
         window.addEventListener('resize', resizeCanvas);
 
         let gameState = 'start';
@@ -250,7 +257,9 @@
         let heartChallengeTriggered = false;
 
         function getScale() {
-            return Math.min(canvas.width / 800, canvas.height / 600);
+            // The canvas is now scaled by DPR, so we base our game scale on the CSS dimensions.
+            const rect = gameContainer.getBoundingClientRect();
+            return Math.min(rect.width / 800, rect.height / 600);
         }
 
         const otter = {
@@ -260,9 +269,10 @@
         };
 
         function resetOtterPosition() {
+            const rect = gameContainer.getBoundingClientRect();
             const scale = getScale();
             otter.x = 100 * scale;
-            otter.y = canvas.height / 2;
+            otter.y = rect.height / 2;
             otter.width = 60 * scale;
             otter.height = 60 * scale;
             otter.isShielded = false;
@@ -275,10 +285,11 @@
         let seaweedWidth = 70;
 
         function createSeaweed(x, gap) {
+            const rect = gameContainer.getBoundingClientRect();
             const scale = getScale();
             const minHeight = 60 * scale;
             const gapSize = gap * scale;
-            const availableHeight = canvas.height - gapSize;
+            const availableHeight = rect.height - gapSize;
             if (availableHeight < 2 * minHeight) {
                 return { x: x, topHeight: availableHeight / 2, bottomHeight: availableHeight / 2, passed: false };
             }
@@ -301,13 +312,14 @@
                 });
             }
         }
-        
+
         function createRock() {
+            const rect = gameContainer.getBoundingClientRect();
             const scale = getScale();
             const size = (Math.random() * 40 + 30) * scale;
             const rock = {
-                x: canvas.width + size,
-                y: canvas.height,
+                x: rect.width + size,
+                y: rect.height,
                 size: size,
                 shape: [
                     { x: -size / 2, y: 0 }, { x: -size / 1.5, y: -size / 3 },
@@ -317,7 +329,7 @@
             };
             scenery.push(rock);
         }
-        
+
         function drawScenery() {
             ctx.fillStyle = '#4a4a4a';
             scenery.forEach(rock => {
@@ -335,7 +347,6 @@
             ctx.save();
             ctx.translate(otter.x + otter.width / 2, otter.y + otter.height / 2);
             ctx.rotate(otter.rotation);
-
             if (otter.isShielded) {
                 const shieldGradient = ctx.createRadialGradient(0, 0, otter.width / 2, 0, 0, otter.width / 2 + 10);
                 shieldGradient.addColorStop(0, 'rgba(173, 216, 230, 0)');
@@ -346,7 +357,6 @@
                 ctx.arc(0, 0, otter.width / 2 + 10, 0, Math.PI * 2);
                 ctx.fill();
             }
-
             ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.beginPath();
             ctx.arc(0, 0, otter.width / 2 + 5, 0, Math.PI * 2);
@@ -363,10 +373,11 @@
             ctx.fillText(emoji, 0, 0);
             ctx.restore();
         }
-        
+
         function drawSeaweed(seaweed) {
+            const rect = gameContainer.getBoundingClientRect();
             const scale = getScale();
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            const gradient = ctx.createLinearGradient(0, 0, 0, rect.height);
             gradient.addColorStop(0, '#2d5a3d');
             gradient.addColorStop(0.5, '#4a7c59');
             gradient.addColorStop(1, '#2d5a3d');
@@ -384,9 +395,9 @@
             for(let i = 0; i < leafCount; i++) {
                 const waveOffset = Math.sin(Date.now() * 0.004 + i + 1) * 6 * scale;
                 ctx.beginPath();
-                ctx.moveTo(seaweed.x + i * leafWidth + waveOffset, canvas.height);
-                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 12 * scale + waveOffset, canvas.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + waveOffset, canvas.height - seaweed.bottomHeight);
-                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 25 * scale + waveOffset, canvas.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + leafWidth + waveOffset, canvas.height);
+                ctx.moveTo(seaweed.x + i * leafWidth + waveOffset, rect.height);
+                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 12 * scale + waveOffset, rect.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + waveOffset, rect.height - seaweed.bottomHeight);
+                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 25 * scale + waveOffset, rect.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + leafWidth + waveOffset, rect.height);
                 ctx.fill();
             }
         }
@@ -423,17 +434,19 @@
         }
 
         function drawBackground() {
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            const rect = gameContainer.getBoundingClientRect();
+            const gradient = ctx.createLinearGradient(0, 0, 0, rect.height);
             gradient.addColorStop(0, '#87CEEB');
             gradient.addColorStop(0.7, '#4682B4');
             gradient.addColorStop(1, '#003366');
             ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, rect.width, rect.height);
             drawScenery();
-            if (Math.random() < 0.02) createBubble(Math.random() * canvas.width, canvas.height + 10);
+            if (Math.random() < 0.02) createBubble(Math.random() * rect.width, rect.height + 10);
         }
 
         function checkSeaweedCollision() {
+            const rect = gameContainer.getBoundingClientRect();
             const scale = getScale();
             const currentSeaweedWidth = seaweedWidth * scale;
             const collisionMargin = 8 * scale;
@@ -442,7 +455,7 @@
                 if (otter.x + collisionMargin < seaweed.x + currentSeaweedWidth &&
                     otter.x + otter.width - collisionMargin > seaweed.x) {
                     if (otter.y + collisionMargin < seaweed.topHeight ||
-                        otter.y + otter.height - collisionMargin > canvas.height - seaweed.bottomHeight) {
+                        otter.y + otter.height - collisionMargin > rect.height - seaweed.bottomHeight) {
                         return i;
                     }
                 }
@@ -454,7 +467,6 @@
             if (gameState === 'gameOver') return;
             gameState = 'gameOver';
             playMusic(bgmMenu);
-
             const finalScoreEl = document.getElementById('finalScore');
             finalScoreEl.textContent = '最终分数: ' + score;
             const medalEl = document.getElementById('medal');
@@ -464,7 +476,6 @@
             else if (score >= 30) medalEl.innerHTML = "🥈 银鱼奖牌 🥈";
             else if (score >= 10) medalEl.innerHTML = "🥉 铜鱼奖牌 🥉";
             else medalEl.innerHTML = "再接再厉！💪";
-            
             document.getElementById('gameOver').style.display = 'block';
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('tapHint').style.display = 'none';
@@ -472,9 +483,11 @@
 
         function update() {
             if (gameState !== 'playing') return;
+            
+            const rect = gameContainer.getBoundingClientRect();
             const scale = getScale();
-
             let moveSpeed, seaweedSpacing, currentSeaweedGap;
+
             if (score <= 50) {
                 moveSpeed = 1.8; seaweedSpacing = 400; currentSeaweedGap = 240;
             } else if (score <= 80) {
@@ -488,7 +501,7 @@
             otter.velocity += otter.gravity * scale;
             otter.y += otter.velocity;
             otter.rotation = Math.max(-0.5, Math.min(0.5, otter.velocity * 0.05));
-            
+
             seaweeds.forEach((seaweed, index) => {
                 seaweed.x -= moveSpeed;
                 if (!seaweed.passed && seaweed.x + (seaweedWidth * scale) < otter.x) {
@@ -503,7 +516,6 @@
                 item.x -= moveSpeed;
                 item.y += item.vy;
                 if (item.y <= item.yMin || item.y >= item.yMax) item.vy *= -1;
-
                 const distX = (otter.x + otter.width / 2) - item.x;
                 const distY = (otter.y + otter.height / 2) - item.y;
                 if (Math.sqrt(distX * distX + distY * distY) < otter.width / 2 + item.size) {
@@ -526,22 +538,20 @@
             });
             if (Math.random() < 0.01 && scenery.length < 5) createRock();
 
-            if (seaweeds.length === 0 || seaweeds[seaweeds.length - 1].x < canvas.width - seaweedSpacing) {
-                const newSeaweedX = canvas.width;
+            if (seaweeds.length === 0 || seaweeds[seaweeds.length - 1].x < rect.width - seaweedSpacing) {
+                const newSeaweedX = rect.width;
                 const newSeaweed = createSeaweed(newSeaweedX, currentSeaweedGap);
                 seaweeds.push(newSeaweed);
                 const gapY_center = newSeaweed.topHeight + (currentSeaweedGap * scale / 2);
                 const itemY = gapY_center + (Math.random() - 0.5) * (currentSeaweedGap * scale * 0.4);
                 const yMin = newSeaweed.topHeight + 30 * scale;
-                const yMax = canvas.height - newSeaweed.bottomHeight - 30 * scale;
-                
+                const yMax = rect.height - newSeaweed.bottomHeight - 30 * scale;
                 const createCollectible = (type, emoji, size) => ({
                     type, emoji, size: size * scale,
                     x: newSeaweedX + (seaweedWidth * scale / 2), y: itemY,
                     vy: (Math.random() > 0.5 ? 1 : -1) * 0.5 * scale,
                     yMin, yMax
                 });
-
                 if (score >= 21 && !heartChallengeTriggered) {
                     heartChallengeTriggered = true;
                     for (let i = 0; i < 3; i++) {
@@ -556,7 +566,7 @@
             }
 
             if (score >= 100) { endGame(); return; }
-            if (otter.y <= 5 || otter.y + otter.height >= canvas.height - 5) { endGame(); return; }
+            if (otter.y <= 5 || otter.y + otter.height >= rect.height - 5) { endGame(); return; }
             const collidedSeaweedIndex = checkSeaweedCollision();
             if (collidedSeaweedIndex > -1) {
                 if (otter.isShielded) {
@@ -570,7 +580,9 @@
         }
 
         function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const rect = gameContainer.getBoundingClientRect();
+            // We use rect.width/height for clearing because the context is already scaled.
+            ctx.clearRect(0, 0, rect.width, rect.height);
             drawBackground();
             drawBubbles();
             drawCollectibles();
@@ -582,7 +594,6 @@
             if(gameState === 'playing') {
                 update();
             }
-            // 无论什么状态，都持续渲染
             render();
             animationId = requestAnimationFrame(gameLoop);
         }
@@ -605,60 +616,61 @@
             bubbles = [];
             scenery = [];
             heartChallengeTriggered = false;
-            
             playMusic(bgmMenu);
-
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('startScreen').style.display = 'block';
             document.getElementById('tapHint').style.display = 'none';
         }
 
         function startGame() {
-            resizeCanvas();
-            resetOtterPosition();
+            resizeCanvas(); // Ensure canvas is correctly sized before starting
             gameState = 'playing';
             score = 0;
+            heartChallengeTriggered = false;
             document.getElementById('score').textContent = '分数: 0';
+            
+            resetOtterPosition();
             otter.velocity = 0;
             otter.rotation = 0;
+            
             seaweeds = [];
             collectibles = [];
             bubbles = [];
             scenery = [];
-            heartChallengeTriggered = false;
-
+            
             playMusic(bgmGame);
-
             const scale = getScale();
+            const rect = gameContainer.getBoundingClientRect();
             for (let i = 0; i < 2; i++) {
-                seaweeds.push(createSeaweed(canvas.width + i * (400 * scale), 240));
+                seaweeds.push(createSeaweed(rect.width + i * (400 * scale), 240));
             }
+
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('tapHint').style.display = 'block';
         }
         
-        // --- Event Listeners ---
-        document.getElementById('startButton').addEventListener('click', () => {
+        // --- Unified Event Listeners ---
+        gameContainer.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
             unlockAudio();
-            startGame();
-        });
-        document.getElementById('restartButton').addEventListener('click', () => {
-            unlockAudio();
-            startGame();
-        });
-        document.getElementById('mainMenuButton').addEventListener('click', () => {
-            unlockAudio();
-            showStartScreen();
-        });
-        document.getElementById('gameCanvas').addEventListener('click', () => {
-            unlockAudio();
-            if (gameState === 'playing') {
+            const targetId = e.target.id;
+
+            if (gameState === 'start' && targetId === 'startButton') {
+                startGame();
+            } else if (gameState === 'playing') {
                 jump();
+            } else if (gameState === 'gameOver') {
+                if (targetId === 'restartButton') {
+                    startGame();
+                } else if (targetId === 'mainMenuButton') {
+                    showStartScreen();
+                }
             }
         });
+
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' || e.code === 'Enter') {
                 e.preventDefault();
                 unlockAudio();
                 if (gameState === 'playing') {
@@ -668,8 +680,9 @@
                 }
             }
         });
-
-        // 初始化
+        
+        // Initialization
+        resizeCanvas();
         showStartScreen();
         gameLoop();
     </script>
