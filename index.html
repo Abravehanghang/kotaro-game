@@ -5,707 +5,673 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>小太郎の大冒险</title>
     <style>
-        body, html {
+        * {
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
-            height: 100%;
-            background-color: #001f3f; /* Dark blue background */
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
-        #game-container {
+        #gameContainer {
             position: relative;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            background-color: #000;
+            width: 100vw;
+            height: 100vh;
+            max-width: 800px;
+            border: none;
+            overflow: hidden;
+            background: linear-gradient(180deg, #87CEEB 0%, #003366 100%);
+            box-shadow: 0 0 30px rgba(0, 168, 204, 0.5);
+            touch-action: none;
+            -webkit-touch-callout: none;
         }
-        canvas {
+        /* 手机竖屏优化 - 限制高度，保持合理的宽高比 */
+        @media (max-width: 768px) and (orientation: portrait) {
+            #gameContainer {
+                width: 100vw;
+                height: 70vh;
+                max-height: 500px;
+                border-radius: 0;
+            }
+        }
+        /* 手机横屏优化 */
+        @media (max-width: 768px) and (orientation: landscape) {
+            #gameContainer {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+        /* 平板和大屏手机 */
+        @media (min-width: 769px) {
+            #gameContainer {
+                max-height: 600px;
+                border-radius: 15px;
+            }
+        }
+        #gameCanvas {
             display: block;
+            background: transparent;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
         }
-        .menu {
+        #ui {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            text-align: center;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
             z-index: 10;
         }
-        .menu h1 {
-            font-size: 2.5rem;
-            text-shadow: 3px 3px 0 #000;
-            margin-bottom: 20px;
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
         }
-        .menu p {
-            font-size: 1rem;
-            margin: 5px 0;
+        @media (max-width: 480px) {
+            #score {
+                font-size: 20px;
+                top: 15px;
+                left: 15px;
+            }
         }
-        .menu button {
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #00a8cc;
+            max-width: 90%;
+            box-sizing: border-box;
+        }
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #00a8cc;
+            max-width: 90%;
+            box-sizing: border-box;
+        }
+        @media (max-width: 480px) {
+            #gameOver, #startScreen {
+                padding: 20px;
+                font-size: 14px;
+            }
+            #gameOver h2, #startScreen h1 {
+                font-size: 20px;
+                margin: 10px 0;
+            }
+        }
+        button {
+            background: linear-gradient(145deg, #00a8cc, #0077aa);
+            color: white;
+            border: none;
             padding: 15px 30px;
-            font-size: 1.2rem;
-            color: #001f3f;
-            background-color: #ffffff;
-            border: 2px solid #001f3f;
-            border-radius: 10px;
+            font-size: 18px;
+            border-radius: 8px;
             cursor: pointer;
-            margin-top: 20px;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.1s ease;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            min-height: 48px;
+            min-width: 120px;
         }
-        .menu button:active {
+        button:active {
             transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        #game-over-menu {
-            display: none;
+        @media (max-width: 480px) {
+            button {
+                padding: 12px 24px;
+                font-size: 16px;
+                min-height: 44px;
+            }
         }
-        #score-display {
-            background: rgba(255,255,255,0.8);
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        #tapHint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            text-align: center;
+            pointer-events: none;
+            animation: pulse 2s infinite;
         }
-        #score-display p {
-            margin: 5px;
-            font-size: 1.2rem;
-            color: #333;
-            font-weight: bold;
-        }
-        #medal-container {
-            margin-top: 20px;
-            font-size: 1.5rem;
-        }
-        #medal-container img {
-            width: 80px;
-            height: 80px;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-        #secret-message {
-            margin-top: 20px;
-            padding: 10px;
-            background: #fff3cd;
-            color: #856404;
-            border-radius: 5px;
-            font-weight: bold;
-            display: none;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
-
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="start-menu" class="menu">
-        <h1>小太郎の大冒险</h1>
-        <p>点击屏幕或按空格键向上游</p>
-        <p>躲避海草，收集小鱼！</p>
-        <button id="start-button">开始游戏</button>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui">
+            <div id="score">分数: 0</div>
+            <div id="startScreen">
+                <h1 style="color: #00a8cc; margin-bottom: 20px;">🦦 小太郎の大冒险</h1>
+                <p>帮助可爱的小太郎穿越海草丛林！</p>
+                <p>收集小鱼🐟和海星⭐，躲避危险！</p>
+                <button id="startButton">开始游戏</button>
+            </div>
+            <div id="gameOver">
+                <h2 style="color: #ff6b6b;">游戏结束！</h2>
+                <p id="finalScore">最终分数: 0</p>
+                <p id="medal" style="font-size: 20px; margin-top: 15px; color: #f0e68c;"></p>
+                <button id="mainMenuButton">返回主界面</button>
+                <button id="restartButton">再玩一次</button>
+            </div>
+            <div id="tapHint" style="display: none;">
+                点击屏幕控制小太郎 🦦
+            </div>
+        </div>
     </div>
 
-    <div id="game-over-menu" class="menu">
-        <h1>游戏结束</h1>
-        <div id="score-display">
-            <p>得分: <span id="final-score">0</span></p>
-            <p>最高分: <span id="best-score">0</span></p>
-        </div>
-        <div id="medal-container">
-            <span id="medal-display"></span>
-        </div>
-        <p id="secret-message">🎉 恭喜达到100分！请联系游戏作者领取神秘礼物！ 🎉</p>
-        <button id="return-button">返回主菜单</button>
-    </div>
-</div>
+    <!-- 音乐文件: 请确保文件名与您上传到GitHub的文件名完全一致 -->
+    <audio id="bgm-menu" loop src="gymnopedie.mp3"></audio>
+    <audio id="bgm-game" loop src="arabesque.mp3"></audio>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const bgmMenu = document.getElementById('bgm-menu');
+        const bgmGame = document.getElementById('bgm-game');
 
-    const startMenu = document.getElementById('start-menu');
-    const gameOverMenu = document.getElementById('game-over-menu');
-    const startButton = document.getElementById('start-button');
-    const returnButton = document.getElementById('return-button');
-    const finalScoreSpan = document.getElementById('final-score');
-    const bestScoreSpan = document.getElementById('best-score');
-    const medalDisplay = document.getElementById('medal-display');
-    const secretMessage = document.getElementById('secret-message');
+        let isAudioUnlocked = false;
+        function unlockAudio() {
+            if (isAudioUnlocked) return;
+            // 尝试播放并立即暂停，这是解锁音频的常用技巧
+            bgmMenu.play().catch(() => {});
+            bgmMenu.pause();
+            bgmGame.play().catch(() => {});
+            bgmGame.pause();
+            isAudioUnlocked = true;
+        }
 
-    let canvasWidth, canvasHeight;
-    let scale = 1;
+        function playMusic(music) {
+            if (!isAudioUnlocked) return;
+            if (music === bgmMenu) {
+                bgmGame.pause();
+                bgmGame.currentTime = 0;
+            } else {
+                bgmMenu.pause();
+                bgmMenu.currentTime = 0;
+            }
+            music.currentTime = 0;
+            music.play().catch(e => console.error("音乐播放失败:", e));
+        }
 
-    function setCanvasDimensions() {
-        const maxWidth = 500;
-        const maxHeight = 800;
-        const aspectRatio = maxWidth / maxHeight;
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let gameState = 'start';
+        let score = 0;
+        let animationId;
+        let heartChallengeTriggered = false;
+
+        function getScale() {
+            return Math.min(canvas.width / 800, canvas.height / 600);
+        }
+
+        const otter = {
+            x: 0, y: 0, width: 60, height: 60,
+            velocity: 0, gravity: 0.12, jumpStrength: -4.2, rotation: 0,
+            isShielded: false
+        };
+
+        function resetOtterPosition() {
+            const scale = getScale();
+            otter.x = 100 * scale;
+            otter.y = canvas.height / 2;
+            otter.width = 60 * scale;
+            otter.height = 60 * scale;
+            otter.isShielded = false;
+        }
+
+        let seaweeds = [];
+        let collectibles = [];
+        let bubbles = [];
+        let scenery = [];
+        let seaweedWidth = 70;
+
+        function createSeaweed(x, gap) {
+            const scale = getScale();
+            const minHeight = 60 * scale;
+            const gapSize = gap * scale;
+            const availableHeight = canvas.height - gapSize;
+            if (availableHeight < 2 * minHeight) {
+                return { x: x, topHeight: availableHeight / 2, bottomHeight: availableHeight / 2, passed: false };
+            }
+            const maxTopHeight = availableHeight - minHeight;
+            const topHeight = minHeight + Math.random() * (maxTopHeight - minHeight);
+            const bottomHeight = availableHeight - topHeight;
+            return { x: x, topHeight: topHeight, bottomHeight: bottomHeight, passed: false };
+        }
+
+        function createBubble(x, y, count = 1) {
+            for (let i = 0; i < count; i++) {
+                const scale = getScale();
+                bubbles.push({
+                    x: x + Math.random() * 20 * scale - 10 * scale,
+                    y: y,
+                    size: (Math.random() * 8 + 4) * scale,
+                    velocity: -(Math.random() * 2 + 1) * scale,
+                    opacity: Math.random() * 0.5 + 0.5,
+                    life: 100
+                });
+            }
+        }
         
-        let w = window.innerWidth;
-        let h = window.innerHeight;
-
-        if (w / h > aspectRatio) {
-            h = Math.min(maxHeight, h - 20);
-            w = h * aspectRatio;
-        } else {
-            w = Math.min(maxWidth, w - 20);
-            h = w / aspectRatio;
+        function createRock() {
+            const scale = getScale();
+            const size = (Math.random() * 40 + 30) * scale;
+            const rock = {
+                x: canvas.width + size,
+                y: canvas.height,
+                size: size,
+                shape: [
+                    { x: -size / 2, y: 0 }, { x: -size / 1.5, y: -size / 3 },
+                    { x: -size / 3, y: -size / 1.5 }, { x: size / 3, y: -size / 1.2 },
+                    { x: size / 1.5, y: -size / 4 }, { x: size / 2, y: 0 },
+                ]
+            };
+            scenery.push(rock);
         }
-
-        canvas.width = maxWidth;
-        canvas.height = maxHeight;
-        scale = w / maxWidth;
-
-        const gameContainer = document.getElementById('game-container');
-        gameContainer.style.width = `${w}px`;
-        gameContainer.style.height = `${h}px`;
-    }
-
-    setCanvasDimensions();
-    window.addEventListener('resize', setCanvasDimensions);
-
-    // Game state
-    let gameState = 'menu'; // 'menu', 'playing', 'gameOver'
-    let score, bestScore, frames;
-    
-    bestScore = localStorage.getItem('otterBestScore') || 0;
-
-    // Game parameters
-    let gameSpeed, gravity, jumpHeight;
-    let seaweedGap, seaweedFrequency;
-
-    // Difficulty settings
-    const difficulty = {
-        easy:   { speed: 2,   gap: 240, freq: 100, gravity: 0.4, jump: -8.0 },
-        medium: { speed: 2.7, gap: 220, freq: 80,  gravity: 0.45, jump: -8.5 },
-        hard:   { speed: 3.5, gap: 200, freq: 65,  gravity: 0.5, jump: -9.0 },
-    };
-
-    function updateDifficulty() {
-        let currentDifficulty;
-        if (score <= 50) {
-            currentDifficulty = difficulty.easy;
-        } else if (score <= 80) {
-            currentDifficulty = difficulty.medium;
-        } else {
-            currentDifficulty = difficulty.hard;
-        }
-        gameSpeed = currentDifficulty.speed;
-        seaweedGap = currentDifficulty.gap;
-        seaweedFrequency = currentDifficulty.freq;
-        player.gravity = currentDifficulty.gravity;
-        player.jumpHeight = currentDifficulty.jump;
-    }
-
-    // Audio Manager
-    const audioManager = {
-        isInitialized: false,
-        sounds: {},
-        init: function() {
-            if (this.isInitialized) return;
-            try {
-                // Satie - Gymnopédie No. 1
-                this.sounds.menuBGM = new Audio('menu-music.mp3'); 
-                this.sounds.menuBGM.loop = true;
-                // Debussy - Arabesque No. 1
-                this.sounds.gameBGM = new Audio('game-music.mp3');
-                this.sounds.gameBGM.loop = true;
-
-                this.sounds.jump = new Audio('jump.mp3');
-                this.sounds.score = new Audio('score.mp3');
-                this.sounds.collect = new Audio('collect.mp3');
-                this.sounds.shield = new Audio('shield.mp3');
-                this.sounds.hit = new Audio('hit.mp3');
-
-                // Unlock audio by playing and pausing them all
-                for (let key in this.sounds) {
-                    this.sounds[key].volume = 0;
-                    this.sounds[key].play().catch(e => {}); // Muted play to unlock
-                }
-                setTimeout(() => {
-                    for (let key in this.sounds) {
-                       this.sounds[key].pause();
-                       this.sounds[key].currentTime = 0;
-                       this.sounds[key].volume = (key.includes('BGM')) ? 0.3 : 0.5;
-                    }
-                    this.isInitialized = true;
-                    this.play('menuBGM');
-                }, 100);
-
-            } catch(e) {
-                console.error("Audio could not be initialized.", e);
-            }
-        },
-        play: function(soundName) {
-            if (this.isInitialized && this.sounds[soundName]) {
-                this.sounds[soundName].currentTime = 0;
-                this.sounds[soundName].play().catch(e => console.log(`Could not play ${soundName}`));
-            }
-        },
-        stop: function(soundName) {
-             if (this.isInitialized && this.sounds[soundName]) {
-                this.sounds[soundName].pause();
-                this.sounds[soundName].currentTime = 0;
-            }
-        },
-        stopAll: function() {
-            if (this.isInitialized) {
-                for (let key in this.sounds) {
-                    this.stop(key);
-                }
-            }
-        }
-    };
-    
-    // Player (Otter)
-    const player = {
-        x: 80,
-        y: canvas.height / 2,
-        width: 60,
-        height: 45,
-        velocityY: 0,
-        gravity: 0, 
-        jumpHeight: 0,
-        rotation: 0,
-        hasShield: false,
-
-        draw: function() {
-            ctx.save();
-            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-            ctx.rotate(this.rotation);
-
-            // Body
-            ctx.fillStyle = '#8B4513'; // SaddleBrown
-            ctx.beginPath();
-            ctx.ellipse(0, 0, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Face
-            ctx.fillStyle = '#D2B48C'; // Tan
-            ctx.beginPath();
-            ctx.ellipse(-15, 0, 15, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Eyes
-            ctx.fillStyle = 'black';
-            ctx.beginPath();
-            ctx.arc(-20, -3, 2, 0, Math.PI * 2);
-            ctx.arc(-10, -3, 2, 0, Math.PI * 2);
-            ctx.fill();
-            // Nose
-            ctx.beginPath();
-            ctx.arc(-25, 2, 3, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.restore();
-            
-            // Shield
-            if (this.hasShield) {
-                ctx.strokeStyle = '#00BFFF'; // DeepSkyBlue
-                ctx.lineWidth = 5;
+        
+        function drawScenery() {
+            ctx.fillStyle = '#4a4a4a';
+            scenery.forEach(rock => {
                 ctx.beginPath();
-                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width/2 + 10, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-        },
-        update: function() {
-            this.velocityY += this.gravity;
-            this.y += this.velocityY;
-            
-            // Limit velocity
-            if(this.velocityY > 15) this.velocityY = 15;
-
-            // Rotation based on velocity
-            this.rotation = Math.min(Math.max(this.velocityY / 20, -Math.PI / 4), Math.PI / 4);
-
-            // Ground collision
-            if (this.y + this.height > canvas.height) {
-                this.y = canvas.height - this.height;
-                this.velocityY = 0;
-                endGame();
-            }
-            // Ceiling collision
-            if (this.y < 0) {
-                this.y = 0;
-                this.velocityY = 0;
-            }
-        },
-        jump: function() {
-            this.velocityY = this.jumpHeight;
-            audioManager.play('jump');
-        },
-        reset: function() {
-            this.y = canvas.height / 2;
-            this.velocityY = 0;
-            this.rotation = 0;
-            this.hasShield = false;
+                ctx.moveTo(rock.x + rock.shape[0].x, rock.y + rock.shape[0].y);
+                for (let i = 1; i < rock.shape.length; i++) {
+                    ctx.lineTo(rock.x + rock.shape[i].x, rock.y + rock.shape[i].y);
+                }
+                ctx.closePath();
+                ctx.fill();
+            });
         }
-    };
 
-    // Obstacles (Seaweed)
-    let seaweeds = [];
-    function handleSeaweeds() {
-        if (frames % seaweedFrequency === 0) {
-            const topHeight = Math.random() * (canvas.height / 2 - 50) + 50;
-            seaweeds.push({
-                x: canvas.width,
-                y: 0,
-                width: 70,
-                height: topHeight,
-                passed: false,
-                isTop: true
-            });
-            seaweeds.push({
-                x: canvas.width,
-                y: topHeight + seaweedGap,
-                width: 70,
-                height: canvas.height - topHeight - seaweedGap,
-                passed: false,
-                isTop: false
-            });
+        function drawOtter() {
+            ctx.save();
+            ctx.translate(otter.x + otter.width / 2, otter.y + otter.height / 2);
+            ctx.rotate(otter.rotation);
+
+            if (otter.isShielded) {
+                const shieldGradient = ctx.createRadialGradient(0, 0, otter.width / 2, 0, 0, otter.width / 2 + 10);
+                shieldGradient.addColorStop(0, 'rgba(173, 216, 230, 0)');
+                shieldGradient.addColorStop(0.8, 'rgba(173, 216, 230, 0.5)');
+                shieldGradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
+                ctx.fillStyle = shieldGradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, otter.width / 2 + 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(0, 0, otter.width / 2 + 5, 0, Math.PI * 2);
+            ctx.fill();
+            let emoji = otter.isShielded ? '😎' : '🦦';
+            if (otter.velocity > 2) emoji = '😵';
+            const fontSize = Math.max(24, otter.width * 0.8);
+            ctx.font = `${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillText(emoji, 2, 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(emoji, 0, 0);
+            ctx.restore();
         }
         
-        for (let i = seaweeds.length - 1; i >= 0; i--) {
-            let s = seaweeds[i];
-            s.x -= gameSpeed;
-            
-            // Drawing seaweed
-            ctx.fillStyle = '#2E8B57'; // SeaGreen
-            ctx.fillRect(s.x, s.y, s.width, s.height);
-            ctx.strokeStyle = '#228B22'; // ForestGreen
-            ctx.lineWidth = 5;
-            ctx.strokeRect(s.x, s.y, s.width, s.height);
+        function drawSeaweed(seaweed) {
+            const scale = getScale();
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#2d5a3d');
+            gradient.addColorStop(0.5, '#4a7c59');
+            gradient.addColorStop(1, '#2d5a3d');
+            ctx.fillStyle = gradient;
+            const leafWidth = 22 * scale;
+            const leafCount = 3;
+            for(let i = 0; i < leafCount; i++) {
+                const waveOffset = Math.sin(Date.now() * 0.003 + i) * 8 * scale;
+                ctx.beginPath();
+                ctx.moveTo(seaweed.x + i * leafWidth + waveOffset, 0);
+                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 12 * scale + waveOffset, seaweed.topHeight / 2, seaweed.x + i * leafWidth + waveOffset, seaweed.topHeight);
+                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 25 * scale + waveOffset, seaweed.topHeight / 2, seaweed.x + i * leafWidth + leafWidth + waveOffset, 0);
+                ctx.fill();
+            }
+            for(let i = 0; i < leafCount; i++) {
+                const waveOffset = Math.sin(Date.now() * 0.004 + i + 1) * 6 * scale;
+                ctx.beginPath();
+                ctx.moveTo(seaweed.x + i * leafWidth + waveOffset, canvas.height);
+                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 12 * scale + waveOffset, canvas.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + waveOffset, canvas.height - seaweed.bottomHeight);
+                ctx.quadraticCurveTo(seaweed.x + i * leafWidth + 25 * scale + waveOffset, canvas.height - seaweed.bottomHeight / 2, seaweed.x + i * leafWidth + leafWidth + waveOffset, canvas.height);
+                ctx.fill();
+            }
+        }
 
-            // Collision
-            if (player.x < s.x + s.width && player.x + player.width > s.x &&
-                player.y < s.y + s.height && player.y + player.height > s.y) {
-                if (player.hasShield) {
-                    player.hasShield = false;
-                    seaweeds.splice(i-1, 2); // Remove both parts of the seaweed
-                    i--;
-                    audioManager.play('shield');
+        function drawCollectibles() {
+            collectibles.forEach(item => {
+                ctx.save();
+                ctx.font = `${item.size * 2}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                if(item.type === 'starfish') {
+                    ctx.shadowColor = 'yellow';
+                    ctx.shadowBlur = 15;
+                }
+                ctx.fillText(item.emoji, item.x, item.y);
+                ctx.restore();
+            });
+        }
+
+        function drawBubbles() {
+            bubbles.forEach((bubble, index) => {
+                ctx.save();
+                ctx.globalAlpha = bubble.opacity;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.beginPath();
+                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                bubble.y += bubble.velocity;
+                bubble.life--;
+                bubble.opacity *= 0.995;
+                if (bubble.life <= 0 || bubble.y < 0) bubbles.splice(index, 1);
+            });
+        }
+
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(0.7, '#4682B4');
+            gradient.addColorStop(1, '#003366');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawScenery();
+            if (Math.random() < 0.02) createBubble(Math.random() * canvas.width, canvas.height + 10);
+        }
+
+        function checkSeaweedCollision() {
+            const scale = getScale();
+            const currentSeaweedWidth = seaweedWidth * scale;
+            const collisionMargin = 8 * scale;
+            for (let i = 0; i < seaweeds.length; i++) {
+                const seaweed = seaweeds[i];
+                if (otter.x + collisionMargin < seaweed.x + currentSeaweedWidth &&
+                    otter.x + otter.width - collisionMargin > seaweed.x) {
+                    if (otter.y + collisionMargin < seaweed.topHeight ||
+                        otter.y + otter.height - collisionMargin > canvas.height - seaweed.bottomHeight) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        function endGame() {
+            if (gameState === 'gameOver') return;
+            gameState = 'gameOver';
+            playMusic(bgmMenu);
+
+            const finalScoreEl = document.getElementById('finalScore');
+            finalScoreEl.textContent = '最终分数: ' + score;
+            const medalEl = document.getElementById('medal');
+            if (score >= 100) medalEl.innerHTML = "请联系制作者领取神秘礼物🎁";
+            else if (score >= 70) medalEl.innerHTML = "💎 钻石小太郎奖牌 💎";
+            else if (score >= 50) medalEl.innerHTML = "🥇 金鱼奖牌 🥇";
+            else if (score >= 30) medalEl.innerHTML = "🥈 银鱼奖牌 🥈";
+            else if (score >= 10) medalEl.innerHTML = "🥉 铜鱼奖牌 🥉";
+            else medalEl.innerHTML = "再接再厉！💪";
+            
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('tapHint').style.display = 'none';
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+            const scale = getScale();
+
+            let moveSpeed, seaweedSpacing, currentSeaweedGap;
+            if (score <= 50) {
+                moveSpeed = 1.8; seaweedSpacing = 400; currentSeaweedGap = 240;
+            } else if (score <= 80) {
+                moveSpeed = 2.1; seaweedSpacing = 360; currentSeaweedGap = 210;
+            } else {
+                moveSpeed = 2.5; seaweedSpacing = 320; currentSeaweedGap = 190;
+            }
+            moveSpeed *= scale;
+            seaweedSpacing *= scale;
+
+            otter.velocity += otter.gravity * scale;
+            otter.y += otter.velocity;
+            otter.rotation = Math.max(-0.5, Math.min(0.5, otter.velocity * 0.05));
+            
+            seaweeds.forEach((seaweed, index) => {
+                seaweed.x -= moveSpeed;
+                if (!seaweed.passed && seaweed.x + (seaweedWidth * scale) < otter.x) {
+                    seaweed.passed = true;
+                    score++;
+                    document.getElementById('score').textContent = '分数: ' + score;
+                }
+                if (seaweed.x + (seaweedWidth * scale) < 0) seaweeds.splice(index, 1);
+            });
+
+            collectibles.forEach((item, index) => {
+                item.x -= moveSpeed;
+                item.y += item.vy;
+                if (item.y <= item.yMin || item.y >= item.yMax) item.vy *= -1;
+
+                const distX = (otter.x + otter.width / 2) - item.x;
+                const distY = (otter.y + otter.height / 2) - item.y;
+                if (Math.sqrt(distX * distX + distY * distY) < otter.width / 2 + item.size) {
+                    switch (item.type) {
+                        case 'fish': score += 1; break;
+                        case 'heart': score += 5; break;
+                        case 'starfish': otter.isShielded = true; break;
+                    }
+                    createBubble(item.x, item.y, 8);
+                    collectibles.splice(index, 1);
+                    document.getElementById('score').textContent = '分数: ' + score;
+                } else if (item.x + item.size < 0) {
+                    collectibles.splice(index, 1);
+                }
+            });
+
+            scenery.forEach((rock, index) => {
+                rock.x -= moveSpeed * 0.5;
+                if (rock.x + rock.size < 0) scenery.splice(index, 1);
+            });
+            if (Math.random() < 0.01 && scenery.length < 5) createRock();
+
+            if (seaweeds.length === 0 || seaweeds[seaweeds.length - 1].x < canvas.width - seaweedSpacing) {
+                const newSeaweedX = canvas.width;
+                const newSeaweed = createSeaweed(newSeaweedX, currentSeaweedGap);
+                seaweeds.push(newSeaweed);
+                const gapY_center = newSeaweed.topHeight + (currentSeaweedGap * scale / 2);
+                const itemY = gapY_center + (Math.random() - 0.5) * (currentSeaweedGap * scale * 0.4);
+                const yMin = newSeaweed.topHeight + 30 * scale;
+                const yMax = canvas.height - newSeaweed.bottomHeight - 30 * scale;
+                
+                const createCollectible = (type, emoji, size) => ({
+                    type, emoji, size: size * scale,
+                    x: newSeaweedX + (seaweedWidth * scale / 2), y: itemY,
+                    vy: (Math.random() > 0.5 ? 1 : -1) * 0.5 * scale,
+                    yMin, yMax
+                });
+
+                if (score >= 21 && !heartChallengeTriggered) {
+                    heartChallengeTriggered = true;
+                    for (let i = 0; i < 3; i++) {
+                        const heart = createCollectible('heart', '❤️', 12);
+                        heart.x += i * 40 * scale;
+                        collectibles.push(heart);
+                    }
+                } else {
+                    if (Math.random() < 0.1) collectibles.push(createCollectible('starfish', '⭐', 15));
+                    else if (Math.random() < 0.7) collectibles.push(createCollectible('fish', '🐟', 12));
+                }
+            }
+
+            if (score >= 100) { endGame(); return; }
+            if (otter.y <= 5 || otter.y + otter.height >= canvas.height - 5) { endGame(); return; }
+            const collidedSeaweedIndex = checkSeaweedCollision();
+            if (collidedSeaweedIndex > -1) {
+                if (otter.isShielded) {
+                    otter.isShielded = false;
+                    createBubble(otter.x + otter.width / 2, otter.y + otter.height / 2, 20);
+                    seaweeds.splice(collidedSeaweedIndex, 1);
                 } else {
                     endGame();
                 }
             }
+        }
 
-            // Score
-            if (!s.passed && s.x + s.width < player.x) {
-                if(s.isTop) {
-                    score++;
-                    audioManager.play('score');
-                }
-                s.passed = true;
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawBubbles();
+            drawCollectibles();
+            seaweeds.forEach(drawSeaweed);
+            drawOtter();
+        }
+
+        function gameLoop() {
+            if(gameState === 'playing') {
+                update();
             }
+            // 无论什么状态，都持续渲染
+            render();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function jump() {
+            if (gameState === 'playing') {
+                const scale = getScale();
+                otter.velocity = otter.jumpStrength * scale;
+                createBubble(otter.x, otter.y + otter.height / 2, 3);
+            }
+        }
+
+        function showStartScreen() {
+            gameState = 'start';
+            resetOtterPosition();
+            otter.velocity = 0;
+            otter.rotation = 0;
+            seaweeds = [];
+            collectibles = [];
+            bubbles = [];
+            scenery = [];
+            heartChallengeTriggered = false;
             
-            if (s.x + s.width < 0) {
-                seaweeds.splice(i, 1);
-            }
-        }
-    }
-    
-    // Collectibles (Fish, Starfish, Hearts)
-    let collectibles = [];
-    let heartChallengeTriggered = false;
-    function handleCollectibles() {
-        // Generate fish
-        if (frames % 150 === 0) {
-            collectibles.push({
-                type: 'fish',
-                x: canvas.width,
-                y: Math.random() * (canvas.height - 100) + 50,
-                baseY: Math.random() * (canvas.height - 100) + 50,
-                width: 30,
-                height: 20,
-                angle: Math.random() * Math.PI * 2
-            });
-        }
-        // Generate shield starfish
-        if (frames > 0 && frames % 700 === 0 && !player.hasShield) {
-            collectibles.push({
-                type: 'starfish',
-                x: canvas.width,
-                y: Math.random() * (canvas.height - 100) + 50,
-                width: 40,
-                height: 40,
-            });
-        }
-        
-        // Heart challenge at 21 points
-        if(score >= 21 && !heartChallengeTriggered){
-            heartChallengeTriggered = true;
-            for(let i=0; i<5; i++){
-                setTimeout(() => {
-                    collectibles.push({
-                        type: 'heart',
-                        x: canvas.width,
-                        y: canvas.height/2 + Math.sin(i*0.5)*100,
-                        width: 30,
-                        height: 30,
-                    });
-                }, i * 500);
-            }
-        }
-        
-        for (let i = collectibles.length - 1; i >= 0; i--) {
-            let c = collectibles[i];
-            c.x -= gameSpeed;
-            
-            if (c.type === 'fish') {
-                c.angle += 0.05;
-                c.y = c.baseY + Math.sin(c.angle) * 20; // Oscillate
-                // Draw fish
-                ctx.fillStyle = 'orange';
-                ctx.beginPath();
-                ctx.ellipse(c.x, c.y, c.width / 2, c.height / 2, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.moveTo(c.x + c.width/2, c.y);
-                ctx.lineTo(c.x + c.width/2 + 10, c.y - 10);
-                ctx.lineTo(c.x + c.width/2 + 10, c.y + 10);
-                ctx.closePath();
-                ctx.fill();
-            } else if (c.type === 'starfish') {
-                // Draw starfish
-                ctx.fillStyle = '#FFD700'; // Gold
-                ctx.strokeStyle = '#FFA500'; // Orange
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                let spikes = 5, outerRadius = 20, innerRadius = 10;
-                let rot = Math.PI / 2 * 3;
-                let x = c.x, y = c.y;
-                let step = Math.PI / spikes;
+            playMusic(bgmMenu);
 
-                ctx.moveTo(x, y - outerRadius)
-                for (let j = 0; j < spikes; j++) {
-                    let curX = x + Math.cos(rot) * outerRadius;
-                    let curY = y + Math.sin(rot) * outerRadius;
-                    ctx.lineTo(curX, curY)
-                    rot += step
-
-                    curX = x + Math.cos(rot) * innerRadius;
-                    curY = y + Math.sin(rot) * innerRadius;
-                    ctx.lineTo(curX, curY)
-                    rot += step
-                }
-                ctx.lineTo(x, y - outerRadius);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-            } else if (c.type === 'heart') {
-                // Draw heart
-                ctx.fillStyle = 'red';
-                ctx.beginPath();
-                let x = c.x, y = c.y, w = c.width, h = c.height;
-                ctx.moveTo(x, y + h/4);
-                ctx.quadraticCurveTo(x, y, x + w/4, y);
-                ctx.quadraticCurveTo(x + w/2, y, x + w/2, y + h/4);
-                ctx.quadraticCurveTo(x + w/2, y, x + 3*w/4, y);
-                ctx.quadraticCurveTo(x + w, y, x + w, y + h/4);
-                ctx.quadraticCurveTo(x + w, y + h/2, x + w/2, y + 3*h/4);
-                ctx.quadraticCurveTo(x, y + h/2, x, y + h/4);
-                ctx.fill();
-            }
-            
-            // Collision with player
-            if (player.x < c.x + c.width && player.x + player.width > c.x &&
-                player.y < c.y + c.height && player.y + player.height > c.y) {
-                
-                if (c.type === 'fish') {
-                    score += 5;
-                } else if (c.type === 'starfish') {
-                    player.hasShield = true;
-                } else if (c.type === 'heart') {
-                    score += 10;
-                }
-                audioManager.play('collect');
-                collectibles.splice(i, 1);
-                continue;
-            }
-
-            if (c.x + c.width < 0) {
-                collectibles.splice(i, 1);
-            }
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('tapHint').style.display = 'none';
         }
-    }
 
-    // Scenery (Rocks)
-    let rocks = [];
-    function handleScenery() {
-        if(frames % 120 === 0) {
-            rocks.push({
-                x: canvas.width,
-                y: canvas.height - 20,
-                size: Math.random() * 20 + 10,
-                speed: 0.5
-            });
-        }
-        for(let i=rocks.length - 1; i >= 0; i--) {
-            let r = rocks[i];
-            r.x -= r.speed;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.beginPath();
-            ctx.arc(r.x, r.y, r.size, 0, Math.PI * 2);
-            ctx.fill();
-            if(r.x + r.size < 0) {
-                rocks.splice(i, 1);
-            }
-        }
-    }
-
-    function drawBackground() {
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, '#0077be'); // Lighter blue at top
-        gradient.addColorStop(1, '#002b4d'); // Darker blue at bottom
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function drawScore() {
-        ctx.fillStyle = 'white';
-        ctx.font = '40px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(score, canvas.width / 2, 60);
-        ctx.strokeText(score, canvas.width / 2, 60);
-    }
-
-    function resetGame() {
-        score = 0;
-        frames = 0;
-        player.reset();
-        seaweeds = [];
-        collectibles = [];
-        heartChallengeTriggered = false;
-        updateDifficulty();
-    }
-    
-    function showGameOverMenu() {
-        finalScoreSpan.textContent = score;
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('otterBestScore', bestScore);
-        }
-        bestScoreSpan.textContent = bestScore;
-        
-        let medal = '';
-        if (score >= 100) {
-            medal = '💎 钻石奖章';
-            secretMessage.style.display = 'block';
-        } else if (score >= 80) {
-            medal = '🥇 黄金奖章';
-            secretMessage.style.display = 'none';
-        } else if (score >= 50) {
-            medal = '🥈 白银奖章';
-            secretMessage.style.display = 'none';
-        } else if (score >= 20) {
-            medal = '🥉 青铜奖章';
-            secretMessage.style.display = 'none';
-        } else {
-            medal = '再接再厉！';
-            secretMessage.style.display = 'none';
-        }
-        medalDisplay.textContent = medal;
-        
-        gameOverMenu.style.display = 'flex';
-    }
-
-    function startGame() {
-        if (gameState !== 'playing') {
-            audioManager.init(); // Initialize audio on first real user interaction
-            resetGame();
+        function startGame() {
+            resizeCanvas();
+            resetOtterPosition();
             gameState = 'playing';
-            startMenu.style.display = 'none';
-            gameOverMenu.style.display = 'none';
-            audioManager.stop('menuBGM');
-            audioManager.play('gameBGM');
-        }
-    }
+            score = 0;
+            document.getElementById('score').textContent = '分数: 0';
+            otter.velocity = 0;
+            otter.rotation = 0;
+            seaweeds = [];
+            collectibles = [];
+            bubbles = [];
+            scenery = [];
+            heartChallengeTriggered = false;
 
-    function endGame() {
-        if (gameState === 'playing') {
-            gameState = 'gameOver';
-            audioManager.stop('gameBGM');
-            audioManager.play('hit');
-            setTimeout(() => {
-                audioManager.play('menuBGM');
-                showGameOverMenu();
-            }, 500);
-        }
-    }
-    
-    // Main Game Loop
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBackground();
-        handleScenery();
+            playMusic(bgmGame);
 
-        if (gameState === 'playing') {
-            frames++;
-            updateDifficulty();
-            handleSeaweeds();
-            handleCollectibles();
-            player.update();
-            player.draw();
-            drawScore();
-        } else {
-            player.draw(); // Draw static player in menus
+            const scale = getScale();
+            for (let i = 0; i < 2; i++) {
+                seaweeds.push(createSeaweed(canvas.width + i * (400 * scale), 240));
+            }
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('tapHint').style.display = 'block';
         }
         
-        requestAnimationFrame(animate);
-    }
-    
-    // Event Handlers
-    function handleInput(e) {
-        if (e.type === 'touchstart') {
-            e.preventDefault();
-        }
-        if (gameState === 'playing') {
-            player.jump();
-        }
-    }
-
-    startButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        startGame();
-    });
-    
-    returnButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        gameState = 'menu';
-        gameOverMenu.style.display = 'none';
-        startMenu.style.display = 'flex';
-        resetGame(); // To clear rocks and player pos
-    });
-    
-    // Add multiple input listeners for better compatibility
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-            if (gameState === 'menu') {
-                startGame();
-            } else {
-                handleInput(e);
+        // --- Event Listeners ---
+        document.getElementById('startButton').addEventListener('click', () => {
+            unlockAudio();
+            startGame();
+        });
+        document.getElementById('restartButton').addEventListener('click', () => {
+            unlockAudio();
+            startGame();
+        });
+        document.getElementById('mainMenuButton').addEventListener('click', () => {
+            unlockAudio();
+            showStartScreen();
+        });
+        document.getElementById('gameCanvas').addEventListener('click', () => {
+            unlockAudio();
+            if (gameState === 'playing') {
+                jump();
             }
-        }
-    });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                unlockAudio();
+                if (gameState === 'playing') {
+                    jump();
+                } else if (gameState === 'start') {
+                    startGame();
+                }
+            }
+        });
 
-    canvas.addEventListener('mousedown', handleInput);
-    canvas.addEventListener('touchstart', handleInput, { passive: false });
-
-    // Initial setup
-    audioManager.play('menuBGM');
-    resetGame();
-    animate();
-});
-</script>
-
+        // 初始化
+        showStartScreen();
+        gameLoop();
+    </script>
 </body>
 </html>
